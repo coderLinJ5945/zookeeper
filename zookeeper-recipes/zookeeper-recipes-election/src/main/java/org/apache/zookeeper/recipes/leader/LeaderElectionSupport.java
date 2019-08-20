@@ -16,21 +16,12 @@
  */
 package org.apache.zookeeper.recipes.leader;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  * <p>
@@ -89,14 +80,17 @@ import org.slf4j.LoggerFactory;
  * unchecked exception that propagates passed normal error handling code. This
  * normally doesn't matter as the same exception would almost certain destroy
  * the entire process and thus the connection to ZK and the leader offer
- * resulting in another round of leader determination.</li>
- * </ul>
- * </p>
+ * resulting in another round of leader determination.
+ *
+ * leader的支持库类，简化leader系统的构建
+ * 配置完成之后，client连接zk，会创建一个leader
+ * 成为leader的应用，使用主机名配置该类的实例，实例至少有一个listeners
+ * client 通过listeners 监听回调，跟踪状态zk的状态改变
  */
 public class LeaderElectionSupport implements Watcher {
 
   private static final Logger logger = LoggerFactory
-      .getLogger(LeaderElectionSupport.class);
+          .getLogger(LeaderElectionSupport.class);
 
   private ZooKeeper zooKeeper;
 
@@ -107,43 +101,51 @@ public class LeaderElectionSupport implements Watcher {
   private LeaderOffer leaderOffer;
   private String hostName;
 
+  /**
+   * 初始化操作：
+   * 1、初始化状态 STOP
+   * 2、创建线程安全的 LeaderElectionAware 集合
+   *    LeaderElectionAware 的作用用于监听服务状态改变
+   */
   public LeaderElectionSupport() {
     state = State.STOP;
     listeners = Collections.synchronizedSet(new HashSet<LeaderElectionAware>());
   }
 
   /**
-   * <p>
-   * Start the election process. This method will create a leader offer,
-   * determine its status, and either become the leader or become ready. If an
-   * instance of {@link ZooKeeper} has not yet been configured by the user, a
-   * new instance is created using the connectString and sessionTime specified.
-   * </p>
-   * <p>
-   * Any (anticipated) failures result in a failed event being sent to all
-   * listeners.
-   * </p>
+   * 启动选举过程，此方法将创建一个 leader offer
+   * 当创建leader时，任何故障，都会发送失败异常到 listeners 的监听
+   * 创建leader 步骤：
+   * 1.改变State 状态为start
+   * 2.将 start 状态通知给所有实现 LeaderElectionAware接口的节点，告诉大家开始选举leader了
+   * 3. 开始创建 leader offer 直到 leader offer 的创建完成
+   * 4. 确认当前已选择的leader 服务的状态
    */
   public synchronized void start() {
+    //1.改变State状态为start
     state = State.START;
+    //2.将 start 状态通知给所有实现 LeaderElectionAware接口的节点，告诉大家开始选举leader了
     dispatchEvent(EventType.START);
 
     logger.info("Starting leader election support");
 
     if (zooKeeper == null) {
       throw new IllegalStateException(
-          "No instance of zookeeper provided. Hint: use setZooKeeper()");
+              "No instance of zookeeper provided. Hint: use setZooKeeper()");
     }
 
     if (hostName == null) {
       throw new IllegalStateException(
-          "No hostname provided. Hint: use setHostName()");
+              "No hostname provided. Hint: use setHostName()");
     }
 
     try {
+      //3. 开始创建 leader offer 直到 leader offer 的创建完成
       makeOffer();
+      //4. 确认当前已选择的leader 服务的状态
       determineElectionStatus();
     } catch (KeeperException e) {
+      // 抛出leader的创建异常
       becomeFailed(e);
       return;
     } catch (InterruptedException e) {
@@ -153,8 +155,7 @@ public class LeaderElectionSupport implements Watcher {
   }
 
   /**
-   * Stops all election services, revokes any outstanding leader offers, and
-   * disconnects from ZooKeeper.
+   * 停止所有的选举服务，撤销leader offer 的提名，断开zookeeper连接
    */
   public synchronized void stop() {
     state = State.STOP;
@@ -176,57 +177,71 @@ public class LeaderElectionSupport implements Watcher {
     dispatchEvent(EventType.STOP_COMPLETE);
   }
 
+  /**
+   * 开始创建 leader offer 直到 leader offer 的创建完成
+   * @throws KeeperException
+   * @throws InterruptedException
+   */
   private void makeOffer() throws KeeperException, InterruptedException {
+    //1. 改变State状态为 OFFER
     state = State.OFFER;
+    //2. 通知所有节点状态改变为 OFFER_START
     dispatchEvent(EventType.OFFER_START);
-
+    //3. 创建 LeaderOffer 对象
     LeaderOffer newLeaderOffer = new LeaderOffer();
     byte[] hostnameBytes;
+    //4. 加锁写入 LeaderOffer 属性：hostName、NodePath
     synchronized (this) {
-        newLeaderOffer.setHostName(hostName);
-        hostnameBytes = hostName.getBytes();
-        newLeaderOffer.setNodePath(zooKeeper.create(rootNodeName + "/" + "n_",
-        hostnameBytes, ZooDefs.Ids.OPEN_ACL_UNSAFE,
-        CreateMode.EPHEMERAL_SEQUENTIAL));
-        leaderOffer = newLeaderOffer;
+      newLeaderOffer.setHostName(hostName);
+      hostnameBytes = hostName.getBytes();
+      newLeaderOffer.setNodePath(zooKeeper.create(rootNodeName + "/" + "n_",
+              hostnameBytes, ZooDefs.Ids.OPEN_ACL_UNSAFE,
+              CreateMode.EPHEMERAL_SEQUENTIAL));
+      leaderOffer = newLeaderOffer;
     }
     logger.debug("Created leader offer {}", leaderOffer);
-
+    //5. 通知所有节点，LeaderOffer创建完成
     dispatchEvent(EventType.OFFER_COMPLETE);
   }
 
   private synchronized LeaderOffer getLeaderOffer() {
-      return leaderOffer;
+    return leaderOffer;
   }
 
+  /**
+   * 再次 确认当前 leader 是当前zk服务的 leader 节点
+   * @throws KeeperException
+   * @throws InterruptedException
+   */
   private void determineElectionStatus() throws KeeperException,
-      InterruptedException {
-
+          InterruptedException {
+    //1. 标记State.DETERMINE 待确定
     state = State.DETERMINE;
+    //2. DETERMINE_START 状态发送给所有节点
     dispatchEvent(EventType.DETERMINE_START);
-
+    //3. 获取当前的 LeaderOffer 对象
     LeaderOffer currentLeaderOffer = getLeaderOffer();
-
+    //4. 从当前 LeaderOffer 对象中获取NodePath 并用“/”切割
     String[] components = currentLeaderOffer.getNodePath().split("/");
-
+    //5. 给当前 LeaderOffer 设置id
     currentLeaderOffer.setId(Integer.valueOf(components[components.length - 1]
-        .substring("n_".length())));
-
+            .substring("n_".length())));
+    //6. 给当前的rootNodeName 下的所有znode 发送 leaderOffer
     List<LeaderOffer> leaderOffers = toLeaderOffers(zooKeeper.getChildren(
-        rootNodeName, false));
+            rootNodeName, false));
 
     /*
-     * For each leader offer, find out where we fit in. If we're first, we
-     * become the leader. If we're not elected the leader, attempt to stat the
-     * offer just less than us. If they exist, watch for their failure, but if
-     * they don't, become the leader.
+     * 7. 确认最终的leader 和 ready
+     * a.拿到排序的 leaderOffers ，判断 leaderOffer 的id和当前 leaderOffer id进行对比，
+     * 第一个将成为leader
+     * b. 其他的将成为 Ready
      */
     for (int i = 0; i < leaderOffers.size(); i++) {
       LeaderOffer leaderOffer = leaderOffers.get(i);
 
       if (leaderOffer.getId().equals(currentLeaderOffer.getId())) {
         logger.debug("There are {} leader offers. I am {} in line.",
-            leaderOffers.size(), i);
+                leaderOffers.size(), i);
 
         dispatchEvent(EventType.DETERMINE_COMPLETE);
 
@@ -236,29 +251,34 @@ public class LeaderElectionSupport implements Watcher {
           becomeReady(leaderOffers.get(i - 1));
         }
 
-        /* Once we've figured out where we are, we're done. */
+        //遍历之后，一旦确认leader的位置，就完成
         break;
       }
     }
   }
 
+  /**
+   * 没有被选成Leader 的节点变为READY 状态
+   * @param neighborLeaderOffer
+   * @throws KeeperException
+   * @throws InterruptedException
+   */
   private void becomeReady(LeaderOffer neighborLeaderOffer)
-      throws KeeperException, InterruptedException {
+          throws KeeperException, InterruptedException {
 
     logger.info("{} not elected leader. Watching node:{}",
-        getLeaderOffer().getNodePath(), neighborLeaderOffer.getNodePath());
+            getLeaderOffer().getNodePath(), neighborLeaderOffer.getNodePath());
 
     /*
-     * Make sure to pass an explicit Watcher because we could be sharing this
-     * zooKeeper instance with someone else.
+     * 确保显式的Watcher，用于共享改zk实例
      */
     Stat stat = zooKeeper.exists(neighborLeaderOffer.getNodePath(), this);
 
     if (stat != null) {
       dispatchEvent(EventType.READY_START);
       logger.debug(
-          "We're behind {} in line and they're alive. Keeping an eye on them.",
-          neighborLeaderOffer.getNodePath());
+              "We're behind {} in line and they're alive. Keeping an eye on them.",
+              neighborLeaderOffer.getNodePath());
       state = State.READY;
       dispatchEvent(EventType.READY_COMPLETE);
     } else {
@@ -267,14 +287,17 @@ public class LeaderElectionSupport implements Watcher {
        * getChildren() and exists(). We need to try and become the leader.
        */
       logger
-          .info(
-              "We were behind {} but it looks like they died. Back to determination.",
-              neighborLeaderOffer.getNodePath());
+              .info(
+                      "We were behind {} but it looks like they died. Back to determination.",
+                      neighborLeaderOffer.getNodePath());
       determineElectionStatus();
     }
 
   }
 
+  /**
+   * 确认之后，最终成为的Leader ELECTED_COMPLETE通知到其他节点
+   */
   private void becomeLeader() {
     state = State.ELECTED;
     dispatchEvent(EventType.ELECTED_START);
@@ -284,6 +307,10 @@ public class LeaderElectionSupport implements Watcher {
     dispatchEvent(EventType.ELECTED_COMPLETE);
   }
 
+  /**
+   * 最终失败的调用
+   * @param e
+   */
   private void becomeFailed(Exception e) {
     logger.error("Failed in state {} - Exception:{}", state, e);
 
@@ -292,22 +319,15 @@ public class LeaderElectionSupport implements Watcher {
   }
 
   /**
-   * Fetch the (user supplied) hostname of the current leader. Note that by the
-   * time this method returns, state could have changed so do not depend on this
-   * to be strongly consistent. This method has to read all leader offers from
-   * ZooKeeper to deterime who the leader is (i.e. there is no caching) so
-   * consider the performance implications of frequent invocation. If there are
-   * no leader offers this method returns null.
-   * 
    * @return hostname of the current leader
    * @throws KeeperException
    * @throws InterruptedException
    */
   public String getLeaderHostName() throws KeeperException,
-      InterruptedException {
+          InterruptedException {
 
     List<LeaderOffer> leaderOffers = toLeaderOffers(zooKeeper.getChildren(
-        rootNodeName, false));
+            rootNodeName, false));
 
     if (leaderOffers.size() > 0) {
       return leaderOffers.get(0).getHostName();
@@ -316,40 +336,46 @@ public class LeaderElectionSupport implements Watcher {
     return null;
   }
 
+  /**
+   * 将发给 LeaderOffers 的根节点一下的所有节点都变成一个leader offer（每一个Node都创建LeaderOffer）
+   * @param strings zk 的 rootNodeName 中获取到的子节点集合
+   * @return
+   * @throws KeeperException
+   * @throws InterruptedException
+   */
   private List<LeaderOffer> toLeaderOffers(List<String> strings)
-      throws KeeperException, InterruptedException {
+          throws KeeperException, InterruptedException {
 
     List<LeaderOffer> leaderOffers = new ArrayList<LeaderOffer>(strings.size());
 
-    /*
-     * Turn each child of rootNodeName into a leader offer. This is a tuple of
-     * the sequence number and the node name.
+    /**
+     * 遍历将每个rootNodeName的孩子变成一个leader offer
      */
     for (String offer : strings) {
       String hostName = new String(zooKeeper.getData(
-          rootNodeName + "/" + offer, false, null));
+              rootNodeName + "/" + offer, false, null));
 
       leaderOffers.add(new LeaderOffer(Integer.valueOf(offer.substring("n_"
-          .length())), rootNodeName + "/" + offer, hostName));
+              .length())), rootNodeName + "/" + offer, hostName));
     }
 
     /*
-     * We sort leader offers by sequence number (which may not be zero-based or
-     * contiguous) and keep their paths handy for setting watches.
+     * 按照序列号进行排序，目的方便设置 watches
      */
     Collections.sort(leaderOffers, new LeaderOffer.IdComparator());
 
     return leaderOffers;
   }
 
+  // TODO: 2019/8/20  学习 Watch 之后，在回头来回顾该方法的作用
   @Override
   public void process(WatchedEvent event) {
     if (event.getType().equals(Watcher.Event.EventType.NodeDeleted)) {
       if (!event.getPath().equals(getLeaderOffer().getNodePath())
-          && state != State.STOP) {
+              && state != State.STOP) {
         logger.debug(
-            "Node {} deleted. Need to run through the election process.",
-            event.getPath());
+                "Node {} deleted. Need to run through the election process.",
+                event.getPath());
         try {
           determineElectionStatus();
         } catch (KeeperException e) {
@@ -361,6 +387,11 @@ public class LeaderElectionSupport implements Watcher {
     }
   }
 
+  /**
+   * 通知事件类型的方法
+   * 通过实现 LeaderElectionAware 接口 获取 eventType的改变
+   * @param eventType
+   */
   private void dispatchEvent(EventType eventType) {
     logger.debug("Dispatching event:{}", eventType);
 
@@ -375,7 +406,7 @@ public class LeaderElectionSupport implements Watcher {
 
   /**
    * Adds {@code listener} to the list of listeners who will receive events.
-   * 
+   *
    * @param listener
    */
   public void addListener(LeaderElectionAware listener) {
@@ -384,7 +415,7 @@ public class LeaderElectionSupport implements Watcher {
 
   /**
    * Remove {@code listener} from the list of listeners who receive events.
-   * 
+   *
    * @param listener
    */
   public void removeListener(LeaderElectionAware listener) {
@@ -394,8 +425,8 @@ public class LeaderElectionSupport implements Watcher {
   @Override
   public String toString() {
     return "{ state:" + state + " leaderOffer:" + getLeaderOffer() + " zooKeeper:"
-        + zooKeeper + " hostName:" + getHostName() + " listeners:" + listeners
-        + " }";
+            + zooKeeper + " hostName:" + getHostName() + " listeners:" + listeners
+            + " }";
   }
 
   /**
@@ -408,7 +439,7 @@ public class LeaderElectionSupport implements Watcher {
    * wish to contend for leader status need to use the same root node. Note: We
    * assume this node already exists.
    * </p>
-   * 
+   *
    * @return a znode path
    */
   public String getRootNodeName() {
@@ -455,6 +486,7 @@ public class LeaderElectionSupport implements Watcher {
   }
 
   /**
+   * // TODO: 2019/8/20  
    * The type of event.
    */
   public static enum EventType {

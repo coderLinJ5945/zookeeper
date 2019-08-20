@@ -20,8 +20,10 @@ import java.io.Serializable;
 import java.util.Comparator;
 
 /**
- * A leader offer is a numeric id / path pair. The id is the sequential node id
- * assigned by ZooKeeper where as the path is the absolute path to the ZNode.
+ * leader 节点的  id / path
+ * id ：ZooKeeper分配的顺序节点id
+ * nodePath ：到ZNode的绝对路径
+ * hostName ：leader 所在的hostname
  */
 public class LeaderOffer {
 

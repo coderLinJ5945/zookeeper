@@ -19,17 +19,13 @@ package org.apache.zookeeper.recipes.leader;
 import org.apache.zookeeper.recipes.leader.LeaderElectionSupport.EventType;
 
 /**
- * An interface to be implemented by clients that want to receive election
- * events.
+ * An interface to be implemented by clients that want to receive election events.
+ * 一个接口被clients 实现，用于接收选举事件
  */
 public interface LeaderElectionAware {
 
   /**
-   * Called during each state transition. Current, low level events are provided
-   * at the beginning and end of each state. For instance, START may be followed
-   * by OFFER_START, OFFER_COMPLETE, DETERMINE_START, DETERMINE_COMPLETE, and so
-   * on.
-   * 
+   *  服务状态改变时调用此接口 ：OFFER_START, OFFER_COMPLETE, DETERMINE_START, DETERMINE_COMPLETE 等
    * @param eventType
    */
   public void onElectionEvent(EventType eventType);

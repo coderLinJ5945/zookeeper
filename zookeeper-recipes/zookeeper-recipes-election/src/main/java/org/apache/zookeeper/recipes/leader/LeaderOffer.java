@@ -24,6 +24,8 @@ import java.util.Comparator;
  * id ：ZooKeeper分配的顺序节点id
  * nodePath ：到ZNode的绝对路径
  * hostName ：leader 所在的hostname
+ *
+ * 实际选主算法，对于程序来说就是创建 LeaderOffer 的实例
  */
 public class LeaderOffer {
 

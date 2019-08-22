@@ -30,6 +30,8 @@
   <artifactId>zookeeper-recipes-lock</artifactId>
   <packaging>jar</packaging>
   <name>Apache ZooKeeper - Recipes - Lock</name>
+
+  <!-- zk 多进程写入独占锁封装 -->
   <description>
     This lock interface recipe implements the lock recipe
   </description>

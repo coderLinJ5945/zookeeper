@@ -20,15 +20,16 @@ package org.apache.zookeeper.recipes.lock;
 import org.apache.zookeeper.KeeperException;
 
 /**
- * A callback object which can be used for implementing retry-able operations in the 
- * {@link org.apache.zookeeper.recipes.lock.ProtocolSupport} class
- *
+ * 对于zk操作的接口类
+ * 使用场景：
+ * 针对某个对象相关的操作（增删改查等），但是每个实际执行都有区别，执行结果固定（boolean）
+ * 这种时候可以暴露公用的 execute接口，用于开放实现
+ * 优点：统一化对象执行，统一化异常
  */
 public interface ZooKeeperOperation {
     
     /**
-     * Performs the operation - which may be involved multiple times if the connection
-     * to ZooKeeper closes during this operation
+     * 实际执行zk操作的接口，统一化异常，统一化boolean返回操作成功、失败结果
      *
      * @return the result of the operation or null
      * @throws KeeperException

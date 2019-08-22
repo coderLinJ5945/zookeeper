@@ -31,6 +31,7 @@
   <artifactId>zookeeper-jute</artifactId>
   <packaging>jar</packaging>
   <name>Apache ZooKeeper - Jute</name>
+  <!-- zk 序列化组件 todo  待细读-->
   <description>ZooKeeper jute</description>
 
   <dependencies>

@@ -30,6 +30,7 @@
   <artifactId>zookeeper-recipes-election</artifactId>
   <packaging>jar</packaging>
   <name>Apache ZooKeeper - Recipes - Election</name>
+  <!-- 选主leader 的实现封装模块 细读-->
   <description>
     This election interface recipe implements the leader election recipe
   </description>

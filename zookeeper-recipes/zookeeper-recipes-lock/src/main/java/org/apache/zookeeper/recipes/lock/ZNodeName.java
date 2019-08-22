@@ -21,9 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents an ephemeral znode name which has an ordered sequence number
- * and can be sorted in order
- *
+ *  有序序号的临时znode名称，可以按顺序排列
+ *  通过 实现 Comparable 接口，将此对象与指定的对象进行比较以进行排序。
  */
 class ZNodeName implements Comparable<ZNodeName> {
     private final String name;
@@ -75,7 +74,7 @@ class ZNodeName implements Comparable<ZNodeName> {
     }
 
     /**
-     * Compare znodes based on their sequence number
+     * 根据znodes的序号比较排序
      * @param that other znode to compare to
      * @return the difference between their sequence numbers: a positive value if this
      *         znode has a larger sequence number, 0 if they have the same sequence number

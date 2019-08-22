@@ -17,15 +17,14 @@
  */
 package org.apache.zookeeper.recipes.lock;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.recipes.lock.ZooKeeperOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,15 +34,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * level helper methods for working with ZooKeeper along with retrying synchronous
  *  operations if the connection to ZooKeeper closes such as 
  *  {@link #retryOperation(ZooKeeperOperation)}
- *
+ *  Protocol 的支持类 ：用于zk连接、关闭时，于zk一起工作，并尝试同步操作
+ *  todo 还不理解 Protocol具体作用，只能初略分析功能
  */
 class ProtocolSupport {
     private static final Logger LOG = LoggerFactory.getLogger(ProtocolSupport.class);
 
     protected final ZooKeeper zookeeper;
+    /** AtomicBoolean 并发包中的原子更新标志，这里用于确定锁的开关状态 */
     private AtomicBoolean closed = new AtomicBoolean(false);
+    //重连延迟
     private long retryDelay = 500L;
+    //重连次数
     private int retryCount = 10;
+
+    // TODO: 2019/8/22  ACL Access Control List 待深入理解
     private List<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
     public ProtocolSupport(ZooKeeper zookeeper) {
@@ -51,8 +56,7 @@ class ProtocolSupport {
     }
 
     /**
-     * Closes this strategy and releases any ZooKeeper resources; but keeps the
-     *  ZooKeeper instance open
+     *  关闭此策略，只是释放 zk resources 但是保持 zk的实例打开
      */
     public void close() {
         if (closed.compareAndSet(false, true)) {
@@ -61,7 +65,7 @@ class ProtocolSupport {
     }
     
     /**
-     * return zookeeper client instance
+     * 获取 zookeeper client 实例
      * @return zookeeper client instance
      */
     public ZooKeeper getZookeeper() {
@@ -84,18 +88,12 @@ class ProtocolSupport {
         this.acl = acl;
     }
 
-    /**
-     * get the retry delay in milliseconds
-     * @return the retry delay
-     */
+
     public long getRetryDelay() {
         return retryDelay;
     }
 
-    /**
-     * Sets the time waited between retry delays
-     * @param retryDelay the retry delay
-     */
+
     public void setRetryDelay(long retryDelay) {
         this.retryDelay = retryDelay;
     }
@@ -109,7 +107,7 @@ class ProtocolSupport {
 
 
     /**
-     * Perform the given operation, retrying if the connection fails
+     * 执行给定的ZooKeeperOperation 操作，如果连接失败，则重试
      * @return object. it needs to be cast to the callee's expected 
      * return type.
      */
@@ -135,8 +133,7 @@ class ProtocolSupport {
     }
 
     /**
-     * Ensures that the given path exists with no data, the current
-     * ACL and no flags
+     * 确保给定路径不存在任何数据、当前ACL和任何标志
      * @param path
      */
     protected void ensurePathExists(String path) {
@@ -144,7 +141,7 @@ class ProtocolSupport {
     }
 
     /**
-     * Ensures that the given path exists with the given data, ACL and flags
+     * 确保给定的路径与给定的数据、ACL和标志一起存在
      * @param path
      * @param acl
      * @param flags
@@ -170,7 +167,7 @@ class ProtocolSupport {
     }
 
     /**
-     * Returns true if this protocol has been closed
+     * 返回 protocol 是否是closed状态
      * @return true if this protocol is closed
      */
     protected boolean isClosed() {

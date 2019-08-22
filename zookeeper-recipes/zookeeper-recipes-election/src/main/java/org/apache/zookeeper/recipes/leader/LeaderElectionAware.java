@@ -19,7 +19,6 @@ package org.apache.zookeeper.recipes.leader;
 import org.apache.zookeeper.recipes.leader.LeaderElectionSupport.EventType;
 
 /**
- * An interface to be implemented by clients that want to receive election events.
  * 一个接口被clients 实现，用于接收选举事件
  */
 public interface LeaderElectionAware {

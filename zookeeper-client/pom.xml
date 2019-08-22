@@ -31,6 +31,7 @@
   <artifactId>zookeeper-client</artifactId>
   <packaging>pom</packaging>
   <name>Apache ZooKeeper - Client</name>
+  <!-- 提供 zk 客户端服务，包含连接、使用等-->
   <description>ZooKeeper client</description>
 
 

@@ -28,6 +28,15 @@ import org.apache.yetus.audience.InterfaceAudience;
  * is expected to be an instance of a class that implements Watcher interface.
  * 
  */
+
+/**
+ * Watcher 接口，基于观察者模式设计
+ * 用于观察处理事件
+ * client 端将从它连接的zk server 获取各种事件
+ * 通过 client应用程序 向 zk server 端注册 回调 对象来处理获取的事件
+ * 回调对象是实现 Watcher接口类的实例
+ * // TODO: 2019/8/22 带细读  Watcher 接口和观察者模式 的实战使用
+ */
 @InterfaceAudience.Public
 public interface Watcher {
 

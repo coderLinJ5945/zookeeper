@@ -18,12 +18,6 @@
 
 package org.apache.zookeeper.server;
 
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import javax.management.JMException;
-
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.zookeeper.jmx.ManagedUtil;
 import org.apache.zookeeper.server.admin.AdminServer;
@@ -35,8 +29,13 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.JMException;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 /**
- * This class starts and runs a standalone ZooKeeperServer.
+ * 独立的 ZooKeeperServer 启动类，用于测试
  */
 @InterfaceAudience.Public
 public class ZooKeeperServerMain {
@@ -46,19 +45,20 @@ public class ZooKeeperServerMain {
     private static final String USAGE =
         "Usage: ZooKeeperServerMain configfile | port datadir [ticktime] [maxcnxns]";
 
-    // ZooKeeper server supports two kinds of connection: unencrypted and encrypted.
+    /**据说是 zk server 支持两种连接方式：加密和未加密 */
     private ServerCnxnFactory cnxnFactory;
     private ServerCnxnFactory secureCnxnFactory;
     private ContainerManager containerManager;
 
     private AdminServer adminServer;
 
-    /*
-     * Start up the ZooKeeper server.
-     *
-     * @param args the configfile or the port datadir [ticktime]
+    /**
+     * ZooKeeper server启动方法
+     * args 设置为zoo.cfg配置文件
+     * @param args
      */
     public static void main(String[] args) {
+        //创建 ZooKeeperServerMain 对象
         ZooKeeperServerMain main = new ZooKeeperServerMain();
         try {
             main.initializeAndRun(args);
@@ -87,6 +87,13 @@ public class ZooKeeperServerMain {
         System.exit(0);
     }
 
+    /**
+     * 读取 zoo.cfg 配置文件
+     * @param args
+     * @throws ConfigException
+     * @throws IOException
+     * @throws AdminServerException
+     */
     protected void initializeAndRun(String[] args)
         throws ConfigException, IOException, AdminServerException
     {
@@ -97,6 +104,7 @@ public class ZooKeeperServerMain {
         }
 
         ServerConfig config = new ServerConfig();
+        /*这里应该是根据配置文件的数量，来决定初始化独立版还是集群版*/
         if (args.length == 1) {
             config.parse(args[0]);
         } else {
@@ -107,7 +115,8 @@ public class ZooKeeperServerMain {
     }
 
     /**
-     * Run from a ServerConfig.
+     * 启动zkServer 核心方法
+     * 从ServerConfig运行实例
      * @param config ServerConfig to use.
      * @throws IOException
      * @throws AdminServerException

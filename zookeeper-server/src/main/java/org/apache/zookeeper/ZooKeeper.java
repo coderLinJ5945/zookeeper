@@ -138,6 +138,9 @@ import java.util.Set;
  * by AutoCloseable (see: http://docs.oracle.com/javase/7/docs/api/java/lang/AutoCloseable.html#close()).
  * close() will never throw an InterruptedException but the exception remains in the
  * signature for backwards compatibility purposes.
+ *  *  ZooKeeper client 的主要类库
+ * 1、implements AutoCloseable，
+ *  用于实现 AutoCloseable 中的资源关闭接口，同时关闭client 的socket io连接。
 */
 @SuppressWarnings("try")
 @InterfaceAudience.Public

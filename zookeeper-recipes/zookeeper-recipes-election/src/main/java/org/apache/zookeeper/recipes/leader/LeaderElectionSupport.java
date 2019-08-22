@@ -86,6 +86,9 @@ import java.util.*;
  * 配置完成之后，client连接zk，会创建一个leader
  * 成为leader的应用，使用主机名配置该类的实例，实例至少有一个listeners
  * client 通过listeners 监听回调，跟踪状态zk的状态改变
+ *
+ * TODO: 2019/8/22  这些简化leader 构建的支持类库不是代码真正使用，
+ * 而是用于开发测试？待确定？疑问待解答
  */
 public class LeaderElectionSupport implements Watcher {
 

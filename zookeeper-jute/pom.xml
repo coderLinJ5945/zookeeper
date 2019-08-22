@@ -122,6 +122,8 @@
                 <argument>org.apache.jute.compiler.generated.Rcc</argument>
                 <argument>-l</argument>
                 <argument>c</argument>
+                <!--todo  不理解这里为什么要使用文件序列化生成Java文件-->
+                <!-- 通过 zookeeper.jute 序列化文件反向生成 zookeeper data的 java文件-->
                 <argument>${project.basedir}/src/main/resources/zookeeper.jute</argument>
               </arguments>
             </configuration>

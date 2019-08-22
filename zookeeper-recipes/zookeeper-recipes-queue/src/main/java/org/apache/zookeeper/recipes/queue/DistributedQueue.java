@@ -18,26 +18,20 @@
 
 package org.apache.zookeeper.recipes.queue;
 
+import org.apache.zookeeper.*;
+import org.apache.zookeeper.data.ACL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
-
 /**
  * 
  * A <a href="package.html">protocol to implement a distributed queue</a>.
- * 
+ * // TODO: 2019/8/22 队列待细读 此类后续使用test进行测试 
  */
 
 public class DistributedQueue {

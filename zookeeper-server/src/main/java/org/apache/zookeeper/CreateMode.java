@@ -22,50 +22,42 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /***
- *  CreateMode value determines how the znode is created on ZooKeeper.
+ *  创建 znode 的节点类型枚举类
  */
 @InterfaceAudience.Public
 public enum CreateMode {
-    
+
     /**
-     * The znode will not be automatically deleted upon client's disconnect.
+     * 永久节点，client断开连接，也不会自动删除
      */
     PERSISTENT (0, false, false, false, false),
     /**
-    * The znode will not be automatically deleted upon client's disconnect,
-    * and its name will be appended with a monotonically increasing number.
-    */
+     * 永久节点，序列化
+     * client断开连接，不会自动删除，nodeName将添加一个单调递增的数字
+     */
     PERSISTENT_SEQUENTIAL (2, false, true, false, false),
     /**
-     * The znode will be deleted upon the client's disconnect.
+     * 临时节点，client断开连接，自动删除
      */
     EPHEMERAL (1, true, false, false, false),
     /**
-     * The znode will be deleted upon the client's disconnect, and its name
-     * will be appended with a monotonically increasing number.
+     * 临时节点，client断开连接，自动删除，nodeName将添加一个单调递增的数字
      */
     EPHEMERAL_SEQUENTIAL (3, true, true, false, false),
     /**
-     * The znode will be a container node. Container
-     * nodes are special purpose nodes useful for recipes such as leader, lock,
-     * etc. When the last child of a container is deleted, the container becomes
-     * a candidate to be deleted by the server at some point in the future.
-     * Given this property, you should be prepared to get
-     * {@link org.apache.zookeeper.KeeperException.NoNodeException}
-     * when creating children inside of this container node.
+     * 容器节点，特殊通途节点，例如 leader, lock 等
+     * 当删除容器的最后一个子元素时，容器将成为将来某个时候服务器要删除的候选对象。
      */
     CONTAINER (4, false, false, true, false),
     /**
-     * The znode will not be automatically deleted upon client's disconnect.
-     * However if the znode has not been modified within the given TTL, it
-     * will be deleted once it has no children.
+     * client 断开，znode不会自动删除
+     * 但是，如果在给定的TTL中没有修改znode，那么一旦它没有子节点，它就会被删除
+     * （TTL: time of life 存活时间）
      */
     PERSISTENT_WITH_TTL(5, false, false, false, true),
     /**
-     * The znode will not be automatically deleted upon client's disconnect,
-     * and its name will be appended with a monotonically increasing number.
-     * However if the znode has not been modified within the given TTL, it
-     * will be deleted once it has no children.
+     * 在客户端断开连接时，znode不会自动删除，它的名称将添加一个单调递增的数字。
+     * 但是，如果在给定的TTL中没有修改znode，那么一旦它没有子节点，它就会被删除。
      */
     PERSISTENT_SEQUENTIAL_WITH_TTL(6, false, true, false, true);
 

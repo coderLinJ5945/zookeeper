@@ -18,26 +18,21 @@
 
 package org.apache.zookeeper.server;
 
-import java.io.File;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-
 import org.apache.yetus.audience.InterfaceAudience;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
+import java.io.File;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+
 /**
- * Server configuration storage.
- *
- * We use this instead of Properties as it's typed.
- *
+ * 服务器配置 和 zoo.cfg 对应
  */
 @InterfaceAudience.Public
 public class ServerConfig {
-    ////
-    //// If you update the configuration parameters be sure
-    //// to update the "conf" 4letter word
-    ////
+
+    //
     protected InetSocketAddress clientPortAddress;
     protected InetSocketAddress secureClientPortAddress;
     protected File dataDir;
@@ -72,7 +67,7 @@ public class ServerConfig {
     }
 
     /**
-     * Parse a ZooKeeper configuration file
+     * 解析ZooKeeper配置文件
      * @param path the patch of the configuration file
      * @return ServerConfig configured wrt arguments
      * @throws ConfigException error processing configuration

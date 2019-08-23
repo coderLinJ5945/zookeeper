@@ -1,21 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.zookeeper;
 
 import org.apache.jute.Record;
@@ -85,65 +67,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+
 /**
- * This is the main class of ZooKeeper client library. To use a ZooKeeper
- * service, an application must first instantiate an object of ZooKeeper class.
- * All the iterations will be done by calling the methods of ZooKeeper class.
- * The methods of this class are thread-safe unless otherwise noted.
- * <p>
- * Once a connection to a server is established, a session ID is assigned to the
- * client. The client will send heart beats to the server periodically to keep
- * the session valid.
- * <p>
- * The application can call ZooKeeper APIs through a client as long as the
- * session ID of the client remains valid.
- * <p>
- * If for some reason, the client fails to send heart beats to the server for a
- * prolonged period of time (exceeding the sessionTimeout value, for instance),
- * the server will expire the session, and the session ID will become invalid.
- * The client object will no longer be usable. To make ZooKeeper API calls, the
- * application must create a new client object.
- * <p>
- * If the ZooKeeper server the client currently connects to fails or otherwise
- * does not respond, the client will automatically try to connect to another
- * server before its session ID expires. If successful, the application can
- * continue to use the client.
- * <p>
- * The ZooKeeper API methods are either synchronous or asynchronous. Synchronous
- * methods blocks until the server has responded. Asynchronous methods just queue
- * the request for sending and return immediately. They take a callback object that
- * will be executed either on successful execution of the request or on error with
- * an appropriate return code (rc) indicating the error.
- * <p>
- * Some successful ZooKeeper API calls can leave watches on the "data nodes" in
- * the ZooKeeper server. Other successful ZooKeeper API calls can trigger those
- * watches. Once a watch is triggered, an event will be delivered to the client
- * which left the watch at the first place. Each watch can be triggered only
- * once. Thus, up to one event will be delivered to a client for every watch it
- * leaves.
- * <p>
- * A client needs an object of a class implementing Watcher interface for
- * processing the events delivered to the client.
+ * ZooKeeper client 的主要类
+ * 使用必须要实例化ZooKeeper 对象，该类的方法都是线程安全，除非有特殊说明。
  *
- * When a client drops the current connection and re-connects to a server, all the
- * existing watches are considered as being triggered but the undelivered events
- * are lost. To emulate this, the client will generate a special event to tell
- * the event handler a connection has been dropped. This special event has
- * EventType None and KeeperState Disconnected.
+ * 一旦建立到 Server 的连接，Session ID就分配给Client。
+ * Client 将定期向 Serve 发送心跳，以保持会话有效。（长连接）
+ *
+ * 只要 Client 的Session ID保持有效，应用程序就可以通过 Client 调用ZooKeeper api。
+ *
+ * 如果某些原因导致 Client 未能向 Server 发送心跳（sessionTimeout ），Server 将会
+ * 使 session失效 Session id 将会无效。Client 失效，需要重新创建 Client
+ *
+ * 如果 Client 连接 到某个 Server 失败或者无响应，Client 会尝试连接其他的 Server
+ *
+ * zk API 同步阻塞 和 异步响应：
+ * 同步阻塞，直到服务响应为止
+ * 异步，对于调用API的发送请求排队，然后立即返回。可接收一个回调对象，对于失败和成功做出响应
+ *
+ * Client 需要 implements Watcher 接口，用来处理Server传递给Client的事件
+ *
  *
  */
-/*
- * We suppress the "try" warning here because the close() method's signature
- * allows it to throw InterruptedException which is strongly advised against
- * by AutoCloseable (see: http://docs.oracle.com/javase/7/docs/api/java/lang/AutoCloseable.html#close()).
- * close() will never throw an InterruptedException but the exception remains in the
- * signature for backwards compatibility purposes.
- *  *  ZooKeeper client 的主要类库
- * 1、implements AutoCloseable，
- *  用于实现 AutoCloseable 中的资源关闭接口，同时关闭client 的socket io连接。
-*/
 @SuppressWarnings("try")
 @InterfaceAudience.Public
+/**implements AutoCloseable:用于实现 AutoCloseable 中的资源关闭接口，
+ * 同时关闭client 的socket io连接。*/
 public class ZooKeeper implements AutoCloseable {
 
     /**
@@ -161,14 +111,26 @@ public class ZooKeeper implements AutoCloseable {
     @Deprecated
     public static final String SECURE_CLIENT = "zookeeper.client.secure";
 
+    /**
+     * 3.5版本之后将 静态常量迁移到了 ZKClientConfig 配置类中
+     */
+
+    /**
+     * 可连接到可用的Server服务列表
+     * final修饰，列表初始化后不可变
+     */
     protected final ClientCnxn cnxn;
+
     private static final Logger LOG;
     static {
-        //Keep these two lines together to keep the initialization order explicit
+        //保持初始化和调用的顺序
         LOG = LoggerFactory.getLogger(ZooKeeper.class);
         Environment.logEnv("Client environment:", LOG);
     }
 
+    /**
+     *  ZooKeeper client 连接到的主机集群
+     */
     protected final HostProvider hostProvider;
 
     /**

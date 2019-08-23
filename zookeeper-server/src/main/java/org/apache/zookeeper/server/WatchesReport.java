@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A watch report, essentially a mapping of session ID to paths that the session
- * has set a watch on. This class is immutable.
+ * 监听报告，类不可变，实际是Session id 到会话已设置监视的路径的映射：id2paths对象
  */
 public class WatchesReport {
 

@@ -17,12 +17,6 @@
  */
 package org.apache.zookeeper;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException.Code;
@@ -30,6 +24,11 @@ import org.apache.zookeeper.common.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.*;
+
+/**
+ * zk 工具类
+ */
 public class ZKUtil {
     private static final Logger LOG = LoggerFactory.getLogger(ZKUtil.class);
     /**
@@ -43,6 +42,8 @@ public class ZKUtil {
      * See {@link #delete(String, int)} for more details.
      *
      * @throws IllegalArgumentException if an invalid path is specified
+     *
+     * 递归删除具有给定 pathRoot 的节点
      */
     public static void deleteRecursive(ZooKeeper zk, final String pathRoot)
         throws InterruptedException, KeeperException

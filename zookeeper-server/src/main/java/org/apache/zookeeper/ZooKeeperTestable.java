@@ -21,6 +21,9 @@ package org.apache.zookeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * zookeeper 测试类
+ */
 class ZooKeeperTestable implements Testable {
     private static final Logger LOG = LoggerFactory
             .getLogger(ZooKeeperTestable.class);
@@ -33,6 +36,10 @@ class ZooKeeperTestable implements Testable {
         this.clientCnxn = clientCnxn;
     }
 
+    /**
+     * 使 zookeeper 实例 处于类似 session 过期状态
+     * 用于测试
+     */
     @Override
     public void injectSessionExpiration() {
         LOG.info("injectSessionExpiration() called");

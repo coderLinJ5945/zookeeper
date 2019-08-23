@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A watch report, essentially a mapping of path to session IDs of sessions that
- * have set a watch on that path. This class is immutable.
+ * 和 WatchesReport 类相反
  */
 public class WatchesPathReport {
 

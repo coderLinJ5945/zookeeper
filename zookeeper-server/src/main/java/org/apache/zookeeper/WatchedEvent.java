@@ -23,15 +23,17 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 
 /**
- *  A WatchedEvent represents a change on the ZooKeeper that a Watcher
- *  is able to respond to.  The WatchedEvent includes exactly what happened,
- *  the current state of the ZooKeeper, and the path of the znode that
- *  was involved in the event.
+ *
+ *  WatchedEvent 类包含：zookeeper 当前状态、事件类型和事件相关的 Znode 路径
+ *
  */
 @InterfaceAudience.Public
 public class WatchedEvent {
+    /**zookeeper 当前状态*/
     final private KeeperState keeperState;
+    /**事件类型*/
     final private EventType eventType;
+    /**事件相关的 Znode 路径*/
     private String path;
     
     /**

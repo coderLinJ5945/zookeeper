@@ -18,16 +18,17 @@
 
 package org.apache.zookeeper;
 
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.WatcherType;
+import org.apache.zookeeper.ZooKeeper.ZKWatchManager;
+
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.zookeeper.Watcher.WatcherType;
-import org.apache.zookeeper.Watcher.Event.EventType;
-import org.apache.zookeeper.ZooKeeper.ZKWatchManager;
 
 /**
  * Handles the special case of removing watches which has registered for a
  * client path
+ * 该类作用：处理删除已注册为client
  */
 public class WatchDeregistration {
 
@@ -47,8 +48,7 @@ public class WatchDeregistration {
     }
 
     /**
-     * Unregistering watcher that was added on path.
-     * 
+     * 删除 watcher
      * @param rc
      *            the result code of the operation that attempted to remove
      *            watch on the path.

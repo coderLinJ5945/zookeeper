@@ -18,14 +18,6 @@
 
 package org.apache.zookeeper.server;
 
-import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -33,9 +25,16 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 /**
- * This class manages watches. It allows watches to be associated with a string
- * and removes watchers and their watches in addition to managing triggers.
+ * watches 的管理类：包含watches的主要功能的调用类
+ * watch的入口学习类
  */
 class WatchManager {
     private static final Logger LOG = LoggerFactory.getLogger(WatchManager.class);
@@ -94,10 +93,21 @@ class WatchManager {
         return triggerWatch(path, type, null);
     }
 
+    /**
+     * 触发 watch 的核心方法
+     * @param path
+     * @param type
+     * @param supress
+     * @return
+     */
     Set<Watcher> triggerWatch(String path, EventType type, Set<Watcher> supress) {
+        // 1. 创建 WatchedEvent 事件
         WatchedEvent e = new WatchedEvent(type,
                 KeeperState.SyncConnected, path);
         HashSet<Watcher> watchers;
+        /**
+         *  2. 锁的方式移除path 对应的所有 Watcher
+         */
         synchronized (this) {
             watchers = watchTable.remove(path);
             if (watchers == null || watchers.isEmpty()) {
@@ -115,10 +125,13 @@ class WatchManager {
                 }
             }
         }
+
         for (Watcher w : watchers) {
             if (supress != null && supress.contains(w)) {
                 continue;
             }
+            // TODO: 2019/8/23  这里需要debugger 来找到相应的调用类
+            // 这个抽象方法是watch的实际核心
             w.process(e);
         }
         return watchers;
@@ -172,8 +185,7 @@ class WatchManager {
     }
 
     /**
-     * Checks the specified watcher exists for the given path
-     *
+     * 检查从给定的 path 中是否包含watcher
      * @param path
      *            znode path
      * @param watcher
@@ -189,8 +201,7 @@ class WatchManager {
     }
 
     /**
-     * Removes the specified watcher for the given path
-     *
+     * 从给定的 path 中移除 watcher
      * @param path
      *            znode path
      * @param watcher
@@ -216,8 +227,7 @@ class WatchManager {
     }
 
     /**
-     * Returns a watch report.
-     *
+     * 返回 Session id 到会话已设置监视的路径的映射 id2paths
      * @return watch report
      * @see WatchesReport
      */
@@ -232,8 +242,7 @@ class WatchManager {
     }
 
     /**
-     * Returns a watch report by path.
-     *
+     * 返回path2ids 的 WatchesPathReport path2ids
      * @return watch report
      * @see WatchesPathReport
      */
@@ -250,8 +259,7 @@ class WatchManager {
     }
 
     /**
-     * Returns a watch summary.
-     *
+     * watch 的摘要
      * @return watch summary
      * @see WatchesSummary
      */

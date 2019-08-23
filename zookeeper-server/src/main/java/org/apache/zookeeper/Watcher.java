@@ -35,18 +35,19 @@ import org.apache.yetus.audience.InterfaceAudience;
  * client 端将从它连接的zk server 获取各种事件
  * 通过 client应用程序 向 zk server 端注册 回调 对象来处理获取的事件
  * 回调对象是实现 Watcher接口类的实例
- * // TODO: 2019/8/22 带细读  Watcher 接口和观察者模式 的实战使用
+ * 个人理解：zookeeper应该是将观察者模式+监听模式结合使用
+ *           watcher用于监听服务端事件，
  */
 @InterfaceAudience.Public
 public interface Watcher {
 
     /**
-     * This interface defines the possible states an Event may represent
+     * zk事件的可能状态接口
      */
     @InterfaceAudience.Public
     public interface Event {
         /**
-         * Enumeration of states the ZooKeeper may be at the event
+         * ZooKeeper 可能的 事件 状态枚举
          */
         @InterfaceAudience.Public
         public enum KeeperState {
@@ -132,7 +133,7 @@ public interface Watcher {
         }
 
         /**
-         * Enumeration of types of events that may occur on the ZooKeeper
+         * ZooKeeper 本身节点的状态枚举
          */
         @InterfaceAudience.Public
         public enum EventType {
@@ -173,7 +174,8 @@ public interface Watcher {
     }
 
     /**
-     * Enumeration of types of watchers
+     *  watchers 类型的枚举
+     *
      */
     @InterfaceAudience.Public
     public enum WatcherType {
@@ -206,5 +208,11 @@ public interface Watcher {
         }
     }
 
+    /**
+     * 观察的事件过程的抽象方法
+     * 目前的实现用于zookeeper.recipes相关的锁、选举和队列
+     * 抽象方法的使用：无序返回结果，有统一的参数类型
+     * @param event
+     */
     abstract public void process(WatchedEvent event);
 }

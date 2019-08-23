@@ -210,6 +210,11 @@ public class DistributedQueue {
             latch = new CountDownLatch(1);
         }
 
+        /**
+         * TODO
+         * @param event
+         */
+        @Override
         public void process(WatchedEvent event){
             LOG.debug("Watcher fired on path: " + event.getPath() + " state: " + 
                     event.getState() + " type " + event.getType());

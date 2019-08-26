@@ -18,13 +18,16 @@
 
 package org.apache.zookeeper.server;
 
+import org.apache.jute.BinaryInputArchive;
+import org.apache.jute.Record;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import org.apache.jute.BinaryInputArchive;
-import org.apache.jute.Record;
-
+/**
+ * 字节缓冲输入流
+ */
 public class ByteBufferInputStream extends InputStream {
     ByteBuffer bb;
 
@@ -72,6 +75,12 @@ public class ByteBufferInputStream extends InputStream {
         return n;
     }
 
+    /**
+     * 字节缓冲流转 record（implements Record 的类  例如：org.apache.zookeeper.server.Stats）
+     * @param bb
+     * @param record
+     * @throws IOException
+     */
     static public void byteBuffer2Record(ByteBuffer bb, Record record)
             throws IOException {
         BinaryInputArchive ia;

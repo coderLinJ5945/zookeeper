@@ -49,6 +49,14 @@ public class ZooKeeperTest extends ClientBase {
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
 
+    /**
+     * 测试调用递归删除
+     * 从ServerClient 创建开始源码debugger学习
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws CliException
+     * @throws KeeperException
+     */
     @Test
     public void testDeleteRecursive() throws IOException, InterruptedException, CliException, KeeperException {
         final ZooKeeper zk = createClient();

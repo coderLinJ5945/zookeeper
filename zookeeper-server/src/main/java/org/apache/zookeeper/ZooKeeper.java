@@ -88,12 +88,13 @@ import java.util.Set;
  *
  * Client 需要 implements Watcher 接口，用来处理Server传递给Client的事件
  *
+ * implements AutoCloseable:用于实现 AutoCloseable 中的资源关闭接口，
+ * 同时关闭client 的socket io连接。
+ *
  *
  */
 @SuppressWarnings("try")
 @InterfaceAudience.Public
-/**implements AutoCloseable:用于实现 AutoCloseable 中的资源关闭接口，
- * 同时关闭client 的socket io连接。*/
 public class ZooKeeper implements AutoCloseable {
 
     /**
@@ -1423,12 +1424,7 @@ public class ZooKeeper implements AutoCloseable {
     }
 
     /**
-     * Create a node with the given path. The node data will be the given data,
-     * and node acl will be the given acl.
-     * <p>
-     * The flags argument specifies whether the created node will be ephemeral
-     * or not.
-     * <p>
+     *
      * An ephemeral node will be removed by the ZooKeeper automatically when the
      * session associated with the creation of the node expires.
      * <p>
@@ -1462,42 +1458,50 @@ public class ZooKeeper implements AutoCloseable {
      * The maximum allowable size of the data array is 1 MB (1,048,576 bytes).
      * Arrays larger than this will cause a KeeperExecption to be thrown.
      *
-     * @param path
-     *                the path for the node
-     * @param data
-     *                the initial data for the node
-     * @param acl
-     *                the acl for the node
-     * @param createMode
-     *                specifying whether the node to be created is ephemeral
-     *                and/or sequential
-     * @return the actual path of the created node
+     * @param path  node 的路径
+     * @param data  node 写入的数据
+     * @param acl   node 的acl
+     * @param createMode 指定创建的节点类型（临时的、永久的等）
+     *
+     * @return 返回创建节点的实际路径
      * @throws KeeperException if the server returns a non-zero error code
      * @throws KeeperException.InvalidACLException if the ACL is invalid, null, or empty
      * @throws InterruptedException if the transaction is interrupted
      * @throws IllegalArgumentException if an invalid path is specified
+     *
+     * 创建node
      */
     public String create(final String path, byte data[], List<ACL> acl,
             CreateMode createMode)
         throws KeeperException, InterruptedException
     {
         final String clientPath = path;
+        //验证提供的znode路径字符串,如果路径有问题则直接抛异常，终止
         PathUtils.validatePath(clientPath, createMode.isSequential());
+        //验证临时节点？
         EphemeralType.validateTTL(createMode, -1);
-
+        //final定义路径
         final String serverPath = prependChroot(clientPath);
-
+        //实例化 RequestHeader extends 的 Record 其中包含xid 和 type
         RequestHeader h = new RequestHeader();
+        //设置node的操作类型
         h.setType(createMode.isContainer() ? ZooDefs.OpCode.createContainer : ZooDefs.OpCode.create);
+        //新建请求和和响应
         CreateRequest request = new CreateRequest();
         CreateResponse response = new CreateResponse();
+        //设置request请求属性，这里的请求指的是到Server 写入的请求
         request.setData(data);
         request.setFlags(createMode.toFlag());
         request.setPath(serverPath);
+        // debugger的时候这里可能会超时导致 acl丢失
         if (acl != null && acl.size() == 0) {
             throw new KeeperException.InvalidACLException();
         }
         request.setAcl(acl);
+        /**
+         * 提交写入请求,这里用到了socket通信写入数据
+         * 队列的方式写入
+         */
         ReplyHeader r = cnxn.submitRequest(h, request, response, null);
         if (r.getErr() != 0) {
             throw KeeperException.create(KeeperException.Code.get(r.getErr()),
@@ -2328,6 +2332,8 @@ public class ZooKeeper implements AutoCloseable {
      * @throws InterruptedException If the server transaction is interrupted.
      * @throws KeeperException If the server signals an error with a non-zero error code.
      * @throws IllegalArgumentException if an invalid path is specified
+     *
+     * 设置给定节点的数据
      */
     public Stat setData(final String path, byte data[], int version)
         throws KeeperException, InterruptedException

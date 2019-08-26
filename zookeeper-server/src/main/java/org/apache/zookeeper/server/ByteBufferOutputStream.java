@@ -18,12 +18,12 @@
 
 package org.apache.zookeeper.server;
 
+import org.apache.jute.BinaryOutputArchive;
+import org.apache.jute.Record;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-
-import org.apache.jute.BinaryOutputArchive;
-import org.apache.jute.Record;
 
 public class ByteBufferOutputStream extends OutputStream {
     ByteBuffer bb;
@@ -42,6 +42,13 @@ public class ByteBufferOutputStream extends OutputStream {
     public void write(byte[] b, int off, int len) throws IOException {
         bb.put(b, off, len);
     }
+
+    /**
+     * record 类的数据（实现类） 序列化
+     * @param record
+     * @param bb
+     * @throws IOException
+     */
     static public void record2ByteBuffer(Record record, ByteBuffer bb)
     throws IOException {
         BinaryOutputArchive oa;

@@ -64,9 +64,11 @@ public enum CreateMode {
     private static final Logger LOG = LoggerFactory.getLogger(CreateMode.class);
 
     private boolean ephemeral;
+    /* 用于判断节点顺序？*/
     private boolean sequential;
     private final boolean isContainer;
     private int flag;
+    /* TTL ？临时节点？*/
     private boolean isTTL;
 
     CreateMode(int flag, boolean ephemeral, boolean sequential,

@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 独立的 ZooKeeperServer 启动类，用于测试
+ * 先从单机版server启动开始吧，MMP课程好贵啊，要是有书就好了
  */
 @InterfaceAudience.Public
 public class ZooKeeperServerMain {
@@ -131,17 +132,22 @@ public class ZooKeeperServerMain {
             // run() in this thread.
             // create a file logger url from the command line args
             txnLog = new FileTxnSnapLog(config.dataLogDir, config.dataDir);
+            //创建 ZooKeeperServer 实例
             final ZooKeeperServer zkServer = new ZooKeeperServer(txnLog,
                     config.tickTime, config.minSessionTimeout, config.maxSessionTimeout, null);
             txnLog.setServerStats(zkServer.serverStats());
 
-            // Registers shutdown handler which will be used to know the
-            // server error or shutdown state changes.
+            /**
+             * 注册关机处理程序，该处理程序将用于了解服务器错误或关机状态更改
+             */
             final CountDownLatch shutdownLatch = new CountDownLatch(1);
             zkServer.registerServerShutdownHandler(
                     new ZooKeeperServerShutdownHandler(shutdownLatch));
 
-            // Start Admin server
+            // 工厂反射的方式创建Server
+            /**
+             * 这里实际上是创建 JettyAdminServer 最为java的web容器
+             */
             adminServer = AdminServerFactory.createAdminServer();
             adminServer.setZooKeeperServer(zkServer);
             adminServer.start();

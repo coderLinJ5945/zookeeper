@@ -18,21 +18,6 @@
 
 package org.apache.zookeeper.server;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.jute.BinaryOutputArchive;
 import org.apache.jute.Record;
 import org.apache.zookeeper.WatchedEvent;
@@ -43,9 +28,21 @@ import org.apache.zookeeper.proto.RequestHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.security.cert.Certificate;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
+ * Server 连接的抽象类，client 到 server 的连接
  * Interface to a Server connection - represents a connection from a client
  * to the server.
+ *
  */
 public abstract class ServerCnxn implements Stats, Watcher {
     // This is just an arbitrary object to represent requests issued by

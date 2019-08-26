@@ -29,12 +29,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Manages cleanup of container ZNodes. This class is meant to only
- * be run from the leader. There's no harm in running from followers/observers
- * but that will be extra work that's not needed. Once started, it periodically
- * checks container nodes that have a cversion > 0 and have no children. A
- * delete is attempted on the node. The result of the delete is unimportant.
- * If the proposal fails or the container node is not empty there's no harm.
+ * 管理容器znode的清理,该类只能由leader运行，类似于垃圾回收？
+ * 一旦启动，它将定期检查具有cversion > 0且没有子节点的容器节点，在节点上尝试删除。
+ * 删除的结果并不重要
  */
 public class ContainerManager {
     private static final Logger LOG = LoggerFactory.getLogger(ContainerManager.class);

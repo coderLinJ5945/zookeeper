@@ -18,19 +18,6 @@
 
 package org.apache.zookeeper.server;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Set;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.management.JMException;
-import javax.security.auth.login.AppConfigurationEntry;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.LoginException;
-
 import org.apache.zookeeper.Environment;
 import org.apache.zookeeper.Login;
 import org.apache.zookeeper.common.ZKConfig;
@@ -39,7 +26,21 @@ import org.apache.zookeeper.server.auth.SaslServerCallbackHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.JMException;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 客户端连接到服务端的抽象工厂类
+ */
 public abstract class ServerCnxnFactory {
 
     public static final String ZOOKEEPER_SERVER_CNXN_FACTORY = "zookeeper.serverCnxnFactory";

@@ -42,6 +42,8 @@ import java.util.Collection;
  * * A HostProvider that loads the list of Hosts from an URL or from DNS 
  * * A HostProvider that re-resolves the InetSocketAddress after a timeout. 
  * * A HostProvider that prefers nearby hosts.
+ *
+ * 一组 client 客户端可以连接的 zk hosts
  */
 @InterfaceAudience.Public
 public interface HostProvider {

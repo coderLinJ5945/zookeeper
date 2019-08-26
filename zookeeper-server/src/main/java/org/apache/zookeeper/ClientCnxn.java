@@ -67,16 +67,21 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ClientCnxn {
     private static final Logger LOG = LoggerFactory.getLogger(ClientCnxn.class);
 
-    /* ZOOKEEPER-706: If a session has a large number of watches set then
+    /** ZOOKEEPER-706: If a session has a large number of watches set then
      * attempting to re-establish those watches after a connection loss may
      * fail due to the SetWatches request exceeding the server's configured
      * jute.maxBuffer value. To avoid this we instead split the watch
      * re-establishement across multiple SetWatches calls. This constant
      * controls the size of each call. It is set to 128kB to be conservative
      * with respect to the server's 1MB default for jute.maxBuffer.
+     *
+     * 简单理解 SET_WATCHES_MAX_LENGTH 的意义：防止一个session 设置大量watchers出现失败问题
      */
     private static final int SET_WATCHES_MAX_LENGTH = 128 * 1024;
 
+    /**
+     * 身份验证数据，// TODO: 2019/8/26  待确认是谁的？ client？ 
+     */
     static class AuthData {
         AuthData(String scheme, byte data[]) {
             this.scheme = scheme;
@@ -91,22 +96,20 @@ public class ClientCnxn {
     private final CopyOnWriteArraySet<AuthData> authInfo = new CopyOnWriteArraySet<AuthData>();
 
     /**
-     * These are the packets that have been sent and are waiting for a response.
+     * 已发送 等待 response 相应的 packets 集合
      */
     private final LinkedList<Packet> pendingQueue = new LinkedList<Packet>();
 
     /**
-     * These are the packets that need to be sent.
+     * 需要发送的 packets
      */
     private final LinkedBlockingDeque<Packet> outgoingQueue = new LinkedBlockingDeque<Packet>();
 
+    /**连接设置的超时时间*/
     private int connectTimeout;
 
     /**
-     * The timeout in ms the client negotiated with the server. This is the
-     * "real" timeout, not the timeout request by the client (which may have
-     * been increased/decreased by the server which applies bounds to this
-     * value.
+     * 实际的超时时间
      */
     private volatile int negotiatedSessionTimeout;
 
@@ -116,6 +119,9 @@ public class ClientCnxn {
 
     private final ZooKeeper zooKeeper;
 
+    /**
+     * 用于返回一组应该被通知 event 的 watcher
+     */
     private final ClientWatchManager watcher;
 
     private long sessionId;
@@ -123,33 +129,40 @@ public class ClientCnxn {
     private byte sessionPasswd[] = new byte[16];
 
     /**
-     * If true, the connection is allowed to go to r-o mode. This field's value
-     * is sent, besides other data, during session creation handshake. If the
-     * server on the other side of the wire is partitioned it'll accept
-     * read-only clients only.
+     * true：只读模式
      */
     private boolean readOnly;
 
+    //?
     final String chrootPath;
 
+    //传出请求队列、生成心跳 和 ReadThread
     final SendThread sendThread;
 
+    /**
+     * 每个Client 连接创建包含两个线程：发送消息线程和 事件线程
+     * sendThread 是 socket通讯主导
+     * eventThread 事件处理的内部类
+     *
+     *
+     */
     final EventThread eventThread;
 
     /**
-     * Set to true when close is called. Latches the connection such that we
-     * don't attempt to re-connect to the server if in the middle of closing the
-     * connection (client sends session disconnect to server as part of close
-     * operation)
+     * 调用 close() 方法时设置成 true
+     * 作用：避免在关闭之后尝试重连逻辑
+     * 至于这里为什么使用volatile ，而不是使用 AtomicBoolean（该类处于单线程环境）
      */
     private volatile boolean closing = false;
-    
+
     /**
-     * A set of ZooKeeper hosts this client could connect to.
+     * client 客户端可以连接到的一组 zk hosts
      */
     private final HostProvider hostProvider;
 
     /**
+     * 用于处理没有sessionId的客户机连接到只读服务器的情况
+     * 第一次建立连接，设置成true
      * Is set to true when a connection to a r/w server is established for the
      * first time; never changed afterwards.
      * <p>
@@ -161,16 +174,25 @@ public class ClientCnxn {
      * <p>
      * If this field is false (which implies we haven't seen r/w server before)
      * then non-zero sessionId is fake, otherwise it is valid.
+     *
+     *
+     *
+     *
      */
     volatile boolean seenRwServerBefore = false;
 
-
+    /**
+     * 客户机管理SASL身份验证对象
+     * 使用SASL对ZooKeeper服务器进行身份验证
+     */
     public ZooKeeperSaslClient zooKeeperSaslClient;
 
+    //client 配置类
     private final ZKClientConfig clientConfig;
+
     /**
-     * If any request's response in not received in configured requestTimeout
-     * then it is assumed that the response packet is lost.
+     * request 请求的超时时间
+     * 如果  request 超时，则会假设 response packet丢失
      */
     private long requestTimeout;
 
@@ -208,7 +230,7 @@ public class ClientCnxn {
     }
 
     /**
-     * This class allows us to pass the headers and the relevant records around.
+     * 发送请求数据封装类
      */
     static class Packet {
         RequestHeader requestHeader;
@@ -363,7 +385,7 @@ public class ClientCnxn {
         connectTimeout = sessionTimeout / hostProvider.size();
         readTimeout = sessionTimeout * 2 / 3;
         readOnly = canBeReadOnly;
-
+        //每次创建一个连接对象，包含发送消息线程和事件触发线程
         sendThread = new SendThread(clientCnxnSocket);
         eventThread = new EventThread();
         this.clientConfig=zooKeeper.getClientConfig();
@@ -375,8 +397,13 @@ public class ClientCnxn {
         eventThread.start();
     }
 
+    //?
     private Object eventOfDeath = new Object();
 
+    /**
+     * 检测程序静态内部类
+     * 将事件 和 watchers 成对
+     */
     private static class WatcherSetEventPair {
         private final Set<Watcher> watchers;
         private final WatchedEvent event;
@@ -391,6 +418,7 @@ public class ClientCnxn {
      * Guard against creating "-EventThread-EventThread-EventThread-..." thread
      * names when ZooKeeper object is being created from within a watcher.
      * See ZOOKEEPER-795 for details.
+     * 构建线程名称：名称中去除包含EventThread 关键字
      */
     private static String makeThreadName(String suffix) {
         String name = Thread.currentThread().getName().
@@ -398,17 +426,24 @@ public class ClientCnxn {
         return name + suffix;
     }
 
+    /**
+     *  ZooKeeperThread 用于捕获未知异常
+     *  这里防止未知异常发生
+     */
     class EventThread extends ZooKeeperThread {
+
+        /**阻塞队列，存储等待的 events */
         private final LinkedBlockingQueue<Object> waitingEvents =
             new LinkedBlockingQueue<Object>();
 
-        /** This is really the queued session state until the event
-         * thread actually processes the event and hands it to the watcher.
-         * But for all intents and purposes this is the state.
+        /**
+         * 排队的会话状态，直到事件线程实际处理事件并将其传递给监视程序
          */
         private volatile KeeperState sessionState = KeeperState.Disconnected;
 
+        /*已经被杀死*/
        private volatile boolean wasKilled = false;
+       /*正在运行*/
        private volatile boolean isRunning = false;
 
         EventThread() {
@@ -461,6 +496,7 @@ public class ClientCnxn {
         public void queueEventOfDeath() {
             waitingEvents.add(eventOfDeath);
         }
+
 
         @Override
         @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -764,8 +800,7 @@ public class ClientCnxn {
     }
 
     /**
-     * This class services the outgoing request queue and generates the heart
-     * beats. It also spawns the ReadThread.
+     * 作用：传出请求队列、生成心跳 和 ReadThread
      */
     class SendThread extends ZooKeeperThread {
         private long lastPingSentNs;
@@ -1477,19 +1512,36 @@ public class ClientCnxn {
         return submitRequest(h, request, response, watchRegistration, null);
     }
 
+    /**
+     *
+     * @param h
+     * @param request
+     * @param response
+     * @param watchRegistration
+     * @param watchDeregistration
+     * @return
+     * @throws InterruptedException
+     */
     public ReplyHeader submitRequest(RequestHeader h, Record request,
             Record response, WatchRegistration watchRegistration,
             WatchDeregistration watchDeregistration)
             throws InterruptedException {
         ReplyHeader r = new ReplyHeader();
+        /**
+         * 提交求情到队列中，队列的方式最终写入数据
+         */
         Packet packet = queuePacket(h, r, request, response, null, null, null,
                 null, watchRegistration, watchDeregistration);
+        /**
+         * 源码借鉴学习：当需要等待确认提交结果，设置超时的设计可作为参考
+         * 对 packet 进行加锁，来实现等待直到Packet 的提交动作完成
+         */
         synchronized (packet) {
             if (requestTimeout > 0) {
-                // Wait for request completion with timeout
+                //这里用于等待，带有超出请求完成
                 waitForPacketFinish(r, packet);
             } else {
-                // Wait for request completion infinitely
+                // 没有超时的设置，将无线等待直到finished
                 while (!packet.finished) {
                     packet.wait();
                 }
@@ -1502,7 +1554,7 @@ public class ClientCnxn {
     }
 
     /**
-     * Wait for request completion with timeout.
+     * 等待 设置超时时间的request请求完成
      */
     private void waitForPacketFinish(ReplyHeader r, Packet packet)
             throws InterruptedException {
@@ -1547,25 +1599,43 @@ public class ClientCnxn {
                 ctx, watchRegistration, null);
     }
 
+    /**
+     * 将 packet 提交到 queue 队列
+     * @param h
+     * @param r
+     * @param request
+     * @param response
+     * @param cb
+     * @param clientPath
+     * @param serverPath
+     * @param ctx
+     * @param watchRegistration
+     * @param watchDeregistration
+     * @return
+     */
     public Packet queuePacket(RequestHeader h, ReplyHeader r, Record request,
             Record response, AsyncCallback cb, String clientPath,
             String serverPath, Object ctx, WatchRegistration watchRegistration,
             WatchDeregistration watchDeregistration) {
         Packet packet = null;
 
-        // Note that we do not generate the Xid for the packet yet. It is
-        // generated later at send-time, by an implementation of ClientCnxnSocket::doIO(),
-        // where the packet is actually sent.
+        /**
+         * 注意：这里还没有给 Packet对象生成 xid
+         * 稍后在发送时由ClientCnxnSocket::doIO()实现生成 xid，包实际上是在这里发送的
+         */
         packet = new Packet(h, r, request, response, watchRegistration);
         packet.cb = cb;
         packet.ctx = ctx;
         packet.clientPath = clientPath;
         packet.serverPath = serverPath;
         packet.watchDeregistration = watchDeregistration;
-        // The synchronized block here is for two purpose:
-        // 1. synchronize with the final cleanup() in SendThread.run() to avoid race
-        // 2. synchronized against each packet. So if a closeSession packet is added,
-        // later packet will be notified.
+        /**
+         *  同步块目的：
+         *  1. SendThread.run() 最终清除，避免竞争
+         *  2. 针对每个packet 进行同步
+         *     如果 closeSession packet 被添加，则后面的packet 会被通知
+         *     closeSession packet 包 简单理解为 Session关闭时，发送的packet？
+         */
         synchronized (state) {
             if (!state.isAlive() || closing) {
                 conLossPacket(packet);

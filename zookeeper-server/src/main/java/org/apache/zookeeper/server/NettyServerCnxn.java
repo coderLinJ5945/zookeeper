@@ -18,18 +18,6 @@
 
 package org.apache.zookeeper.server;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.security.cert.Certificate;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.CompositeByteBuf;
@@ -51,6 +39,21 @@ import org.apache.zookeeper.server.command.SetTraceMaskCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ *
+ */
 public class NettyServerCnxn extends ServerCnxn {
     private static final Logger LOG = LoggerFactory.getLogger(NettyServerCnxn.class);
     private final Channel channel;
@@ -64,10 +67,11 @@ public class NettyServerCnxn extends ServerCnxn {
     private Certificate[] clientChain;
     private volatile boolean closingChannel;
 
-    /** The ZooKeeperServer for this connection. May be null if the server
-      * is not currently serving requests (for example if the server is not
-      * an active quorum participant.
-      */
+
+    /**
+     * 用于ZooKeeperServer 的连接
+     * 如果Server 不提供请求服务（server不是活动仲裁参与者），则可能为null
+     */
     private volatile ZooKeeperServer zkServer;
 
     private final NettyServerCnxnFactory factory;
@@ -83,6 +87,9 @@ public class NettyServerCnxn extends ServerCnxn {
         }
     }
 
+    /**
+     * 关闭NettyServer连接
+     */
     @Override
     public void close() {
         closingChannel = true;
@@ -132,6 +139,10 @@ public class NettyServerCnxn extends ServerCnxn {
         }
     }
 
+    /**
+     * 获取连接sessionId,用于确认连接状态
+     * @return
+     */
     @Override
     public long getSessionId() {
         return sessionId;
@@ -142,6 +153,10 @@ public class NettyServerCnxn extends ServerCnxn {
         return sessionTimeout;
     }
 
+    /**
+     * watche 事件改变的回调实现方法
+     * @param event
+     */
     @Override
     public void process(WatchedEvent event) {
         ReplyHeader h = new ReplyHeader(-1, -1L, 0);

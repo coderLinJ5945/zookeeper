@@ -18,46 +18,16 @@
 
 package org.apache.zookeeper.test;
 
-import static org.apache.zookeeper.client.FourLetterWordMain.send4LetterWord;
-
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-
-
+import org.apache.zookeeper.*;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.common.IOUtils;
 import org.apache.zookeeper.common.Time;
 import org.apache.zookeeper.common.X509Exception.SSLContextException;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.PortAssignment;
-import org.apache.zookeeper.TestableZooKeeper;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.ZKTestCase;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.common.IOUtils;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ServerCnxnFactoryAccessor;
 import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.persistence.FilePadding;
-import org.apache.zookeeper.server.persistence.FileTxnLog;
 import org.apache.zookeeper.server.quorum.QuorumPeer;
 import org.apache.zookeeper.server.util.OSMXBean;
 import org.junit.After;
@@ -66,13 +36,30 @@ import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
+import java.io.*;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.apache.zookeeper.client.FourLetterWordMain.send4LetterWord;
+
+/**
+ * zkClient 的基类
+ */
 public abstract class ClientBase extends ZKTestCase {
     protected static final Logger LOG = LoggerFactory.getLogger(ClientBase.class);
+    /*调试时连接超时时间为30分钟，避免超时带来的问题*/
+    public static int CONNECTION_TIMEOUT = 3000000;
 
-    public static int CONNECTION_TIMEOUT = 30000;
+    /*Base File 的文件文件*/
     static final File BASETEST =
         new File(System.getProperty("build.test.dir", "build"));
 
+    // client的的IP+端口  127.0.0.1:11222
     protected String hostPort = "127.0.0.1:" + PortAssignment.unique();
     protected int maxCnxns = 0;
     protected ServerCnxnFactory serverFactory = null;
@@ -94,6 +81,9 @@ public abstract class ClientBase extends ZKTestCase {
         public void process(WatchedEvent event) { /* nada */ }
     }
 
+    /**
+     * 测试观察者类
+     */
     public static class CountdownWatcher implements Watcher {
         // XXX this doesn't need to be volatile! (Should probably be final)
         volatile CountDownLatch clientConnected;
@@ -107,6 +97,8 @@ public abstract class ClientBase extends ZKTestCase {
         public CountdownWatcher() {
             reset();
         }
+
+        /* 重置CountdownWatcher 的默认属性*/
         synchronized public void reset() {
             clientConnected = new CountDownLatch(1);
             connected = false;
@@ -202,6 +194,7 @@ public abstract class ClientBase extends ZKTestCase {
     protected TestableZooKeeper createClient(String hp)
         throws IOException, InterruptedException
     {
+        /*新建 watcher*/
         CountdownWatcher watcher = new CountdownWatcher();
         return createClient(watcher, hp);
     }
@@ -221,11 +214,22 @@ public abstract class ClientBase extends ZKTestCase {
         return createClient(watcher, hp, CONNECTION_TIMEOUT);
     }
 
+    /**
+     * 创建测试Client的连接类
+     * @param watcher
+     * @param hp
+     * @param timeout
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
     protected TestableZooKeeper createClient(CountdownWatcher watcher,
             String hp, int timeout)
         throws IOException, InterruptedException
     {
+        //重置watcher的默认配置
         watcher.reset();
+        //创建测试的zookeeper对象，该类extends ZooKeeperAdmin
         TestableZooKeeper zk = new TestableZooKeeper(hp, timeout, watcher);
         if (!watcher.clientConnected.await(timeout, TimeUnit.MILLISECONDS))
         {
@@ -237,6 +241,7 @@ public abstract class ClientBase extends ZKTestCase {
                 Assert.fail("allClients never setup");
             }
             if (allClients != null) {
+                //添加zk的连接
                 allClients.add(zk);
                 JMXEnv.ensureAll(getHexSessionId(zk.getSessionId()));
             } else {

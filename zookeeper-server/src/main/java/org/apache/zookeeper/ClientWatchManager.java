@@ -21,6 +21,7 @@ package org.apache.zookeeper;
 import java.util.Set;
 
 /**
+ *
  */
 public interface ClientWatchManager {
     /**

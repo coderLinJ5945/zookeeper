@@ -18,25 +18,23 @@
 
 package org.apache.zookeeper.admin;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.apache.yetus.audience.InterfaceAudience;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.data.Stat;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.List;
+
 /**
- * This is the main class for ZooKeeperAdmin client library.
- * This library is used to perform cluster administration tasks,
- * such as reconfigure cluster membership. The ZooKeeperAdmin class
- * inherits ZooKeeper and has similar usage pattern as ZooKeeper class.
+ * ZooKeeperAdmin client 主类库，用于执行集群管理任务
+ * 例如重新配置集群成员
+ * ZooKeeperAdmin类继承了ZooKeeper，参考ZooKeeper
  * Please check {@link ZooKeeper} class document for more details.
  *
  * @since 3.5.3

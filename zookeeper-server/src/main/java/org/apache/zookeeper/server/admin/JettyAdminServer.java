@@ -18,26 +18,20 @@
 
 package org.apache.zookeeper.server.admin;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.zookeeper.server.ZooKeeperServer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.zookeeper.server.ZooKeeperServer;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * This class encapsulates a Jetty server for running Commands.
@@ -51,6 +45,8 @@ import org.slf4j.LoggerFactory;
  *
  * @see Commands
  * @see CommandOutputter
+ *
+ * 该类封装用于运行命令的Jetty服务器
  */
 public class JettyAdminServer implements AdminServer {
     static final Logger LOG = LoggerFactory.getLogger(JettyAdminServer.class);
@@ -74,6 +70,13 @@ public class JettyAdminServer implements AdminServer {
              System.getProperty("zookeeper.admin.commandURL", DEFAULT_COMMAND_URL));
     }
 
+    /**
+     * 这里可做为jetty 的demo 学习 构建stand-alone 的单机容器
+     * @param address
+     * @param port
+     * @param timeout
+     * @param commandUrl
+     */
     public JettyAdminServer(String address, int port, int timeout, String commandUrl) {
         this.port = port;
         this.idleTimeout = timeout;
@@ -95,7 +98,7 @@ public class JettyAdminServer implements AdminServer {
     }
 
     /**
-     * Start the embedded Jetty server.
+     * 启动嵌入式Jetty服务器
      */
     @Override
     public void start() throws AdminServerException {

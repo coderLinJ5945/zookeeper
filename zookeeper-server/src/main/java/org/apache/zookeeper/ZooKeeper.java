@@ -591,6 +591,10 @@ public class ZooKeeper implements AutoCloseable {
         CONNECTING, ASSOCIATING, CONNECTED, CONNECTEDREADONLY,
         CLOSED, AUTH_FAILED, NOT_CONNECTED;
 
+        /**
+         * 不是 关闭 和 身份验证失败都返回true
+         * @return
+         */
         public boolean isAlive() {
             return this != CLOSED && this != AUTH_FAILED;
         }
@@ -827,6 +831,8 @@ public class ZooKeeper implements AutoCloseable {
      *             in cases of network failure
      * @throws IllegalArgumentException
      *             if an invalid chroot path is specified
+     *
+     *  实例化 zookeeper 连接对象，并初始化 ClientCnxn 连接线程
      */
     public ZooKeeper(String connectString, int sessionTimeout, Watcher watcher,
             boolean canBeReadOnly, HostProvider aHostProvider,
@@ -847,6 +853,7 @@ public class ZooKeeper implements AutoCloseable {
         cnxn = createConnection(connectStringParser.getChrootPath(),
                 hostProvider, sessionTimeout, this, watchManager,
                 getClientCnxnSocket(), canBeReadOnly);
+        //初始化 ClientCnxn 线程
         cnxn.start();
     }
 
@@ -1501,12 +1508,14 @@ public class ZooKeeper implements AutoCloseable {
         /**
          * 提交写入请求,这里用到了socket通信写入数据
          * 队列的方式写入
+         * 写入调用的核心
          */
         ReplyHeader r = cnxn.submitRequest(h, request, response, null);
         if (r.getErr() != 0) {
             throw KeeperException.create(KeeperException.Code.get(r.getErr()),
                     clientPath);
         }
+        // 这里的意思可能是没如果有 更新的路径，则使用更的路径，如果没有则使用path
         if (cnxn.chrootPath == null) {
             return response.getPath();
         } else {

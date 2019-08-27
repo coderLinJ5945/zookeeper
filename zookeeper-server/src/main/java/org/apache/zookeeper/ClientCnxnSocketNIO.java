@@ -18,6 +18,13 @@
 
 package org.apache.zookeeper;
 
+import org.apache.zookeeper.ClientCnxn.EndOfStreamException;
+import org.apache.zookeeper.ClientCnxn.Packet;
+import org.apache.zookeeper.ZooDefs.OpCode;
+import org.apache.zookeeper.client.ZKClientConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -30,26 +37,42 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingDeque;
-
-import org.apache.zookeeper.ClientCnxn.EndOfStreamException;
-import org.apache.zookeeper.ClientCnxn.Packet;
-import org.apache.zookeeper.ZooDefs.OpCode;
-import org.apache.zookeeper.client.ZKClientConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+/**
+ *  Socket 到持久化zk数据类
+ *
+ *  ClientCnxnSocketNIO 是 ClientCnxnSocket 的具体实现 非阻塞IO流的实现
+ *  非阻塞IO的实现，其实是使用的缓冲区实现，一般用于实时通讯
+ *  这里需要区分的是和 ClientCnxnSocketNetty的区别？
+ *  // TODO: 2019/8/27 前提 java.nio核心 
+ *  // TODO: 2019/8/27  同步 、异步、 阻塞 和非阻塞 demo实现
+ *  非阻塞demo ： nonblocking
+ *
+ */
 public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     private static final Logger LOG = LoggerFactory
             .getLogger(ClientCnxnSocketNIO.class);
 
+    /**
+     *  java.nio 核心之一 Selector 选择器
+     *  这里用于 SocketChannel 的注册
+     */
     private final Selector selector = Selector.open();
 
+    /**
+     * SelectableChannel与Selector的注册的令牌
+     */
     private SelectionKey sockKey;
 
+    /** 本地socket地址 */
     private SocketAddress localSocketAddress;
-
+    /** 远程socket地址 */
     private SocketAddress remoteSocketAddress;
 
+    /**
+     * 通过 ZKClientConfig 配置初始化 ClientCnxnSocketNIO 信息
+     * @param clientConfig
+     * @throws IOException
+     */
     ClientCnxnSocketNIO(ZKClientConfig clientConfig) throws IOException {
         this.clientConfig = clientConfig;
         initProperties();
@@ -158,6 +181,12 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
         }
     }
 
+    /**
+     * 从 outgoingQueue 队列中获取 Packet
+     * @param outgoingQueue
+     * @param tunneledAuthInProgres
+     * @return
+     */
     private Packet findSendablePacket(LinkedBlockingDeque<Packet> outgoingQueue,
                                       boolean tunneledAuthInProgres) {
         if (outgoingQueue.isEmpty()) {
@@ -189,6 +218,10 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
         return null;
     }
 
+    /**
+     * 清理资源
+     * 在重连或关闭的时候调用
+     */
     @Override
     void cleanup() {
         if (sockKey != null) {
@@ -250,7 +283,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     }
     
     /**
-     * create a socket channel.
+     * 创建 socket channel
      * @return the created socket channel
      * @throws IOException
      */
@@ -264,24 +297,40 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     }
 
     /**
-     * register with the selection and connect
+     * 注册 连接
      * @param sock the {@link SocketChannel} 
      * @param addr the address of remote host
      * @throws IOException
      */
     void registerAndConnect(SocketChannel sock, InetSocketAddress addr) 
     throws IOException {
+        //1. 注册socket 通道到选择器，并获取socket秘钥
         sockKey = sock.register(selector, SelectionKey.OP_CONNECT);
+        //2. 最终执行 socket 连接
         boolean immediateConnect = sock.connect(addr);
+        /**
+         * 3. 如果连接上，设置session、watches和身份验证
+         */
         if (immediateConnect) {
             sendThread.primeConnection();
         }
     }
-    
+
+    /**
+     * 创建client 连接
+     * @param addr
+     * @throws IOException
+     */
     @Override
     void connect(InetSocketAddress addr) throws IOException {
+        /**
+         * 1. 构造 socket 通道
+         */
         SocketChannel sock = createSock();
         try {
+            /**
+             * 2. 注册 socket 通道 并尝试连接
+             */
            registerAndConnect(sock, addr);
       } catch (IOException e) {
             LOG.error("Unable to open socket to " + addr);
@@ -338,7 +387,16 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     private synchronized void wakeupCnxn() {
         selector.wakeup();
     }
-    
+
+    /**
+     * 执行client 到server 的数据运输
+     * @param waitTimeOut timeout in blocking wait. Unit in MilliSecond.
+     * @param pendingQueue These are the packets that have been sent and
+     *                     are waiting for a response.
+     * @param cnxn
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Override
     void doTransport(int waitTimeOut, List<Packet> pendingQueue, ClientCnxn cnxn)
             throws IOException, InterruptedException {

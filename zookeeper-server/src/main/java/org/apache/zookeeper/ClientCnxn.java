@@ -386,6 +386,7 @@ public class ClientCnxn {
         readTimeout = sessionTimeout * 2 / 3;
         readOnly = canBeReadOnly;
         //每次创建一个连接对象，包含发送消息线程和事件触发线程
+        //创建socket 发送的线程
         sendThread = new SendThread(clientCnxnSocket);
         eventThread = new EventThread();
         this.clientConfig=zooKeeper.getClientConfig();
@@ -497,7 +498,9 @@ public class ClientCnxn {
             waitingEvents.add(eventOfDeath);
         }
 
-
+        /**
+         * EventThread 的线程启动入口
+         */
         @Override
         @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
         public void run() {
@@ -1064,6 +1067,11 @@ public class ClientCnxn {
         // throws a LoginException: see startConnect() below.
         private boolean saslLoginFailed = false;
 
+        /**
+         * 开启socket 连接
+         * @param addr
+         * @throws IOException
+         */
         private void startConnect(InetSocketAddress addr) throws IOException {
             // initializing it for new connection
             saslLoginFailed = false;
@@ -1114,17 +1122,31 @@ public class ClientCnxn {
 
         private static final String RETRY_CONN_MSG =
             ", closing socket connection and attempting reconnect";
+
+        /**
+         * SendThread 的启动入口
+         * SendThread 启动做的操作：
+         * 1.初始化 ClientCnxnSocket 对象
+         * 2.验证连接是否Alive，
+         */
         @Override
         public void run() {
+            //初始化 sendThread、sessionId 和 outgoingQueue对象
             clientCnxnSocket.introduce(this, sessionId, outgoingQueue);
+            //初始化当前时间
             clientCnxnSocket.updateNow();
             clientCnxnSocket.updateLastSendAndHeard();
             int to;
             long lastPingRwServer = Time.currentElapsedTime();
             final int MAX_SEND_PING_INTERVAL = 10000; //10 seconds
             InetSocketAddress serverAddress = null;
+            /**
+             * while 判断 client的连接状态，直到连接成功
+             * 当连接并且身份验证成功，执行以下操作
+             */
             while (state.isAlive()) {
                 try {
+                    /*如果 socket 连接没有连上，尝试从新 开启socket 连接*/
                     if (!clientCnxnSocket.isConnected()) {
                         // don't re-establish connection if we are closing
                         if (closing) {
@@ -1136,12 +1158,17 @@ public class ClientCnxn {
                         } else {
                             serverAddress = hostProvider.next(1000);
                         }
+                        //从新开始连接尝试
                         startConnect(serverAddress);
                         clientCnxnSocket.updateLastSendAndHeard();
                     }
 
+                    /**
+                     *  连接成功：
+                     *
+                     */
                     if (state.isConnected()) {
-                        // determine whether we need to send an AuthFailed event.
+                        // 确定是否需要发送AuthFailed事件
                         if (zooKeeperSaslClient != null) {
                             boolean sendAuthEvent = false;
                             if (zooKeeperSaslClient.getSaslState() == ZooKeeperSaslClient.SaslState.INITIAL) {
@@ -1255,9 +1282,14 @@ public class ClientCnxn {
                     }
                 }
             }
+
+            /**
+             * 执行完以上操作之后，锁定当前的 client 状态
+             */
             synchronized (state) {
                 // When it comes to this point, it guarantees that later queued
                 // packet to outgoingQueue will be notified of death.
+                //回收资源？
                 cleanup();
             }
             clientCnxnSocket.close();
@@ -1506,6 +1538,15 @@ public class ClientCnxn {
         return xid++;
     }
 
+    /**
+     *
+     * @param h     requestHeader 请求头
+     * @param request 请求
+     * @param response 相应
+     * @param watchRegistration
+     * @return
+     * @throws InterruptedException
+     */
     public ReplyHeader submitRequest(RequestHeader h, Record request,
             Record response, WatchRegistration watchRegistration)
             throws InterruptedException {
@@ -1529,12 +1570,15 @@ public class ClientCnxn {
         ReplyHeader r = new ReplyHeader();
         /**
          * 提交求情到队列中，队列的方式最终写入数据
+         * // TODO: 2019/8/27  这里只看到了提及到到队列中，没有看到具体的写入方法
          */
         Packet packet = queuePacket(h, r, request, response, null, null, null,
                 null, watchRegistration, watchDeregistration);
         /**
          * 源码借鉴学习：当需要等待确认提交结果，设置超时的设计可作为参考
+         * 这里的finished 的设计可以运用在写调用回调等待的时候
          * 对 packet 进行加锁，来实现等待直到Packet 的提交动作完成
+         *
          */
         synchronized (packet) {
             if (requestTimeout > 0) {
@@ -1637,17 +1681,22 @@ public class ClientCnxn {
          *     closeSession packet 包 简单理解为 Session关闭时，发送的packet？
          */
         synchronized (state) {
+            // 如果连接状态为非alive 或者 正在关闭中，则直接finish packet
             if (!state.isAlive() || closing) {
                 conLossPacket(packet);
             } else {
-                // If the client is asking to close the session then
-                // mark as closing
+                // 如何是 client 主动要求关闭 session ，则改变 closing 为true
                 if (h.getType() == OpCode.closeSession) {
                     closing = true;
                 }
+                // 如果处于连接装填，并且 head 的类型为非关闭要求，则添加 packet
                 outgoingQueue.add(packet);
             }
         }
+        /**
+         * 个人理解，这里应该是 最终的发送 packet 的调用方法
+         * 这里采用抽象方法的方式进行发送的最终实现：此处可用于队列发送到mqtt的学习
+         */
         sendThread.getClientCnxnSocket().packetAdded();
         return packet;
     }

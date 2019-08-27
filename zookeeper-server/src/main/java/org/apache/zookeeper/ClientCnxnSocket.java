@@ -18,6 +18,16 @@
 
 package org.apache.zookeeper;
 
+import org.apache.jute.BinaryInputArchive;
+import org.apache.zookeeper.ClientCnxn.Packet;
+import org.apache.zookeeper.client.ZKClientConfig;
+import org.apache.zookeeper.common.Time;
+import org.apache.zookeeper.common.ZKConfig;
+import org.apache.zookeeper.proto.ConnectResponse;
+import org.apache.zookeeper.server.ByteBufferInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -27,23 +37,14 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.jute.BinaryInputArchive;
-import org.apache.zookeeper.ClientCnxn.Packet;
-import org.apache.zookeeper.client.ZKClientConfig;
-import org.apache.zookeeper.common.ZKConfig;
-import org.apache.zookeeper.common.Time;
-import org.apache.zookeeper.proto.ConnectResponse;
-import org.apache.zookeeper.server.ByteBufferInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * A ClientCnxnSocket does the lower level communication with a socket
  * implementation.
  * 
  * This code has been moved out of ClientCnxn so that a Netty implementation can
  * be provided as an alternative to the NIO socket code.
- * 
+ *
+ * ClientCnxn 和 Socket 实现进行低层通信
  */
 abstract class ClientCnxnSocket {
     private static final Logger LOG = LoggerFactory.getLogger(ClientCnxnSocket.class);
@@ -68,6 +69,7 @@ abstract class ClientCnxnSocket {
     protected ClientCnxn.SendThread sendThread;
     protected LinkedBlockingDeque<Packet> outgoingQueue;
     protected ZKClientConfig clientConfig;
+    /** packet 允许的最大长度设置*/
     private int packetLen = ZKClientConfig.CLIENT_MAX_PACKET_LENGTH_DEFAULT;
 
     /**
@@ -76,6 +78,12 @@ abstract class ClientCnxnSocket {
      */
     protected long sessionId;
 
+    /**
+     * 初始化 sendThread、sessionId 和 outgoingQueue对象
+     * @param sendThread
+     * @param sessionId
+     * @param outgoingQueue
+     */
     void introduce(ClientCnxn.SendThread sendThread, long sessionId,
                    LinkedBlockingDeque<Packet> outgoingQueue) {
         this.sendThread = sendThread;
@@ -169,13 +177,14 @@ abstract class ClientCnxnSocket {
     abstract SocketAddress getLocalSocketAddress();
 
     /**
-     * Clean up resources for a fresh new socket.
-     * It's called before reconnect or close.
+     * 为新的 socket 清理出资源.
+     * 它在重新连接或关闭之前被调用
      */
     abstract void cleanup();
 
     /**
      * new packets are added to outgoingQueue.
+     *
      */
     abstract void packetAdded();
 
@@ -230,6 +239,10 @@ abstract class ClientCnxnSocket {
      */
     abstract void sendPacket(Packet p) throws IOException;
 
+    /**
+     * 实例化的方法编写参考: 使用try catch捕获，抛出自定义信息的指定异常
+     * @throws IOException
+     */
     protected void initProperties() throws IOException {
         try {
             packetLen = clientConfig.getInt(ZKConfig.JUTE_MAXBUFFER,

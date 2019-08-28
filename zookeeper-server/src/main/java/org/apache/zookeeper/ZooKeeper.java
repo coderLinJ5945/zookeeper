@@ -586,6 +586,9 @@ public class ZooKeeper implements AutoCloseable {
         }
     }
 
+    /**
+     * zookeeper 客户端 的状态枚举类
+     */
     @InterfaceAudience.Public
     public enum States {
         CONNECTING, ASSOCIATING, CONNECTED, CONNECTEDREADONLY,

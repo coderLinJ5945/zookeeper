@@ -61,9 +61,9 @@ public class ZooKeeperTest extends ClientBase {
     public void testDeleteRecursive() throws IOException, InterruptedException, CliException, KeeperException {
         final ZooKeeper zk = createClient();
         // making sure setdata works on /
-        //zk.setData("/", "some".getBytes(), -1);
-        zk.create("/a", "some".getBytes(), Ids.OPEN_ACL_UNSAFE,
-                CreateMode.PERSISTENT);
+        zk.setData("/", "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111".getBytes(), -1);
+        /*zk.create("/a", "some".getBytes(), Ids.OPEN_ACL_UNSAFE,
+                CreateMode.PERSISTENT);*/
 /*
         zk.create("/a/b", "some".getBytes(), Ids.OPEN_ACL_UNSAFE,
                 CreateMode.PERSISTENT);

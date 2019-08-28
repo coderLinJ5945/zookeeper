@@ -18,34 +18,32 @@
 
 package org.apache.zookeeper;
 
-/**
- * This class is responsible for refreshing Kerberos credentials for
- * logins for both Zookeeper client and server.
- * See ZooKeeperSaslServer for server-side usage.
- * See ZooKeeperSaslClient for client-side usage.
- */
 
+
+import org.apache.zookeeper.client.ZKClientConfig;
+import org.apache.zookeeper.common.Time;
+import org.apache.zookeeper.common.ZKConfig;
+import org.apache.zookeeper.server.ZooKeeperSaslServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import javax.security.auth.callback.CallbackHandler;
-
-import org.apache.zookeeper.client.ZKClientConfig;
-import org.apache.zookeeper.common.ZKConfig;
-import org.apache.zookeeper.server.ZooKeeperSaslServer;
-import org.apache.zookeeper.common.Time;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.Subject;
-
 import java.util.Date;
 import java.util.Random;
 import java.util.Set;
 
+/**
+ *  负责为Zookeeper客户机和服务器的登录刷新Kerberos凭证
+ *  有关服务器端使用，{@link org.apache.zookeeper.server.ZooKeeperSaslServer}
+ *  有关客户端使用，请参见{@link org.apache.zookeeper.client.ZooKeeperSaslClient}
+ */
 public class Login {
     private static final String KINIT_COMMAND_DEFAULT = "/usr/bin/kinit";
     private static final Logger LOG = LoggerFactory.getLogger(Login.class);

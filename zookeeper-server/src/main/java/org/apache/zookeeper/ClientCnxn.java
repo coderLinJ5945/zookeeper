@@ -956,7 +956,7 @@ public class ClientCnxn {
         }
 
         /**
-         * Setup session, previous watches, authentication.
+         * 设置 session、watches 和身份验证
          */
         void primeConnection() throws IOException {
             LOG.info("Socket connection established, initiating session, client: {}, server: {}",
@@ -1246,7 +1246,7 @@ public class ClientCnxn {
                         }
                         to = Math.min(to, pingRwTimeout - idlePingRwServer);
                     }
-
+                    //开启 client 到 server的数据传输（读写）
                     clientCnxnSocket.doTransport(to, pendingQueue, ClientCnxn.this);
                 } catch (Throwable e) {
                     if (closing) {

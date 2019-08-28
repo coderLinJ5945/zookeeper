@@ -20,6 +20,7 @@ public class NioServer {
         // 初始化TCP连接监听通道
         ServerSocketChannel listenChannel = ServerSocketChannel.open();
         listenChannel.bind(new InetSocketAddress(9999));
+        //设置通道为非阻塞
         listenChannel.configureBlocking(false);
         // 注册到selector（监听其ACCEPT事件）
         listenChannel.register(selector, SelectionKey.OP_ACCEPT);
@@ -65,6 +66,7 @@ public class NioServer {
                             buffer.put("Hello, Client!\0".getBytes());
                             buffer.flip();
                             while (buffer.hasRemaining()) {
+                                //通道返回写入到缓冲区中
                                 ((SocketChannel) key.channel()).write(buffer);
                             }
                         } else {

@@ -52,7 +52,7 @@ abstract class ClientCnxnSocket {
     protected boolean initialized;
 
     /**
-     * This buffer is only used to read the length of the incoming message.
+     * 此缓冲区仅用于读取传入消息的长度
      */
     protected final ByteBuffer lenBuffer = ByteBuffer.allocateDirect(4);
 

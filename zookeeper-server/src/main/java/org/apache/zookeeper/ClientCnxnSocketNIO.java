@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingDeque;
 /**
  *  Socket 到持久化zk数据类
+ *  该类的连接 {@link #connect(InetSocketAddress)}.
+ *  该类的消息传输入口{@link #doTransport}.
  *
  *  ClientCnxnSocketNIO 是 ClientCnxnSocket 的具体实现 非阻塞IO流的实现
  *  非阻塞IO的实现，其实是使用的缓冲区实现，一般用于实时通讯
@@ -55,6 +57,11 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     /**
      *  java.nio 核心之一 Selector 选择器
      *  这里用于 SocketChannel 的注册
+     *  socket 通信操作步骤：
+     *  1. 初始化建立选择器
+     *  2. 构造 socket 通道
+     *  3. 注册
+     *  4. selector.select(); 等待socket通道的事件
      */
     private final Selector selector = Selector.open();
 
@@ -84,6 +91,8 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     }
     
     /**
+     * 由{@link #doTransport} client传输数据方法调用
+     * B. 执行读写操作
      * @return true if a packet was received
      * @throws InterruptedException
      * @throws IOException
@@ -94,15 +103,21 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
         if (sock == null) {
             throw new IOException("Socket is null!");
         }
+        // socket通道为可读状态
         if (sockKey.isReadable()) {
+            //读取缓冲区数据
             int rc = sock.read(incomingBuffer);
+            // rc < 0 无法从服务器sessionid读取其他数据
             if (rc < 0) {
                 throw new EndOfStreamException(
                         "Unable to read additional data from server sessionid 0x"
                                 + Long.toHexString(sessionId)
                                 + ", likely server has closed socket");
             }
+            // 判断当前位置到极限位置之间是否有数据
+            // TODO: 2019/8/28 读取的细节没看明白 
             if (!incomingBuffer.hasRemaining()) {
+                //如果没有数据，说明数据读完了
                 incomingBuffer.flip();
                 if (incomingBuffer == lenBuffer) {
                     recvCount.getAndIncrement();
@@ -128,6 +143,8 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                 }
             }
         }
+
+        // socket通道为可写入状态
         if (sockKey.isWritable()) {
             Packet p = findSendablePacket(outgoingQueue,
                     sendThread.tunnelAuthInProgress());
@@ -182,7 +199,8 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     }
 
     /**
-     * 从 outgoingQueue 队列中获取 Packet
+     * doIO方法调用
+     * C.从 outgoingQueue 队列中获取 Packet
      * @param outgoingQueue
      * @param tunneledAuthInProgres
      * @return
@@ -304,6 +322,11 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
      */
     void registerAndConnect(SocketChannel sock, InetSocketAddress addr) 
     throws IOException {
+        /** socket 通信操作步骤：
+         *  1. 初始化建立选择器
+         *  2. 初始化socket通道
+         *  3. 注册
+         */
         //1. 注册socket 通道到选择器，并获取socket秘钥
         sockKey = sock.register(selector, SelectionKey.OP_CONNECT);
         //2. 最终执行 socket 连接
@@ -317,7 +340,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     }
 
     /**
-     * 创建client 连接
+     * 创建client 连接：该类执行的入口
      * @param addr
      * @throws IOException
      */
@@ -389,7 +412,8 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     }
 
     /**
-     * 执行client 到server 的数据运输
+     * 由 {@link org.apache.zookeeper.ClientCnxn.SendThread} 的线程的run方法执行调用
+     * A、执行client 到server 的数据运输
      * @param waitTimeOut timeout in blocking wait. Unit in MilliSecond.
      * @param pendingQueue These are the packets that have been sent and
      *                     are waiting for a response.
@@ -400,33 +424,63 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     @Override
     void doTransport(int waitTimeOut, List<Packet> pendingQueue, ClientCnxn cnxn)
             throws IOException, InterruptedException {
+        /**
+         * 此方法执行阻止selection operation 。
+         * 只有在选择了至少一个通道之后，才会返回此选择器的wakeup方法,
+         * 当前线程被中断，或给定的超时期限到期，以先到者为准。
+         */
         selector.select(waitTimeOut);
+
         Set<SelectionKey> selected;
+        //锁定当前的调用线程，这里的this为SendThread对象
         synchronized (this) {
             selected = selector.selectedKeys();
         }
-        // Everything below and until we get back to the select is
-        // non blocking, so time is effectively a constant. That is
-        // Why we just have to do this once, here
+        /**
+         * 以下代码直到我们回到select之前都是非阻塞的
+         * 所以时间实际上是一个常数。这就是为什么我们只需要做一次
+         *
+         * 反向理解，当有select时，以下代码为阻塞状态，逐步执行
+         */
+        //更新当前时间
         updateNow();
+        /**
+         * 遍历 selector 中所有通道的 SelectionKey,
+         * 对该选择器锁监听的通道的连接、读写 IO的处理
+         */
         for (SelectionKey k : selected) {
             SocketChannel sc = ((SocketChannel) k.channel());
+            //如果就绪操作集和连接个数都不为0，这里是判断连接的操作
             if ((k.readyOps() & SelectionKey.OP_CONNECT) != 0) {
+                /**
+                 *  如果已经完成socket 通道的连接，执行以下操作：
+                 *  1. 更新最后一次的发送时间为now
+                 *  2. 更新socket和address
+                 *  3. 设置 session、watches 和身份验证
+                 */
                 if (sc.finishConnect()) {
                     updateLastSendAndHeard();
                     updateSocketAddresses();
                     sendThread.primeConnection();
+                    System.out.println("连接成功");
                 }
+                /**
+                 *  这里判断如何有读写操作的 SelectionKey，则执行相应的读写IO
+                 */
             } else if ((k.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_WRITE)) != 0) {
+                // 执行读写IO
                 doIO(pendingQueue, cnxn);
             }
+
         }
+
         if (sendThread.getZkState().isConnected()) {
             if (findSendablePacket(outgoingQueue,
                     sendThread.tunnelAuthInProgress()) != null) {
                 enableWrite();
             }
         }
+        // 选择器执行完成之后，最后清除selector 中的 selectedKeys
         selected.clear();
     }
 

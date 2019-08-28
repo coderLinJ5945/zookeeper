@@ -18,16 +18,16 @@
 
 package org.apache.zookeeper;
 
+import org.slf4j.Logger;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-
 /**
- * Provide insight into the runtime environment.
- *
+ * 对运行时 环境的洞察类
+ * 简单理解，获取运行时环境的各种信息类
  */
 public class Environment {
     public static final String JAAS_CONF_KEY = "java.security.auth.login.config";

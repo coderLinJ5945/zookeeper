@@ -16,7 +16,7 @@ public class NioClient {
         // 先向服务端发送数据
         os.write("Hello, Server!\0".getBytes());
 
-        // 读取服务端发来的数据
+        //  从 InputStream 读取服务端发来的数据
         int b;
         while ((b = is.read()) != 0) {
             System.out.print((char) b);

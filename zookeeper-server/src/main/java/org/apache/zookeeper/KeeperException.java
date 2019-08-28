@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("serial")
+/**
+ * 自定义异常抽象类，自定义异常学习参考
+ */
 @InterfaceAudience.Public
 public abstract class KeeperException extends Exception {
     /**

@@ -34,6 +34,8 @@ is voted on and approved by the Apache ZooKeeper PMC:
 
   https://repo1.maven.org/maven2/org/apache/zookeeper/zookeeper/
 
+
+
 ## Java 8
 
 If you are going to compile with Java 1.8, you should use a
@@ -42,4 +44,9 @@ recent release at u211 or above.
 ## Contributing
 We always welcome new contributors to the project! See [How to Contribute](https://cwiki.apache.org/confluence/display/ZOOKEEPER/HowToContribute) for details on how to submit patch through pull request and our contribution workflow.
 
+## 核心源码阅读
+1. server 启动（单机）
+2. zookeeper client 和 server 交互（单机）
+3. leader选主模式（集群）
+4. 数据一致性的具体代码实现（集群）
 

@@ -24,7 +24,7 @@ import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
 
 /**
- * addAuth command for cli
+ * 为CLI命令的添加身份验证类
  */
 public class AddAuthCommand extends CliCommand {
 

@@ -26,7 +26,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 
 /**
- * deleteAll command for cli
+ * CLI对接的删除所有命令
  */
 public class DeleteAllCommand extends CliCommand {
 

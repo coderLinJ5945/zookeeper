@@ -17,8 +17,6 @@
  */
 package org.apache.zookeeper.cli;
 
-import java.io.IOException;
-import java.util.List;
 import org.apache.commons.cli.*;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Quotas;
@@ -26,8 +24,13 @@ import org.apache.zookeeper.StatsTrack;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
+import java.io.IOException;
+import java.util.List;
+
 /**
- * delQuota command for cli
+ * CLI删除 Quota 命令
+ *
+ * quota命令：用来显示磁盘使用情况和限制情况
  */
 public class DelQuotaCommand extends CliCommand {
 

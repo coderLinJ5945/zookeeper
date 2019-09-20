@@ -19,11 +19,9 @@
 package org.apache.zookeeper.server.admin;
 
 import java.io.PrintWriter;
-import java.util.Map;
 
 /**
- * CommandOutputters are used to format the responses from Commands.
- *
+ * 格式化命令的相应 responses
  * @see Command
  * @see JettyAdminServer
  */

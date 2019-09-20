@@ -24,21 +24,28 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 
-/*
- *  Used to perform an atomic write into a file.
- *  If there is a failure in the middle of the writing operation, 
- *  the original file (if it exists) is left intact.
+/**
+ *  对文件执行原子写入，new 对象，执行原子写入操作
+ *  // TODO: 2019/9/18  需要学习这里怎么保证原子性写入 
+ *  如果在写入操作的过程中出现故障，则保留原始文件(如果存在)。
+
  *  Based on the org.apache.zookeeper.server.quorum.QuorumPeer.writeLongToFile(...) idiom
  *  using the HDFS AtomicFileOutputStream class.
  */
 public class AtomicFileWritingIdiom {
 
+    /**
+     * 输出流接口声明
+     */
     public static interface OutputStreamStatement {
 
         public void write(OutputStream os) throws IOException;
 
     }
 
+    /**
+     * 写入声明
+     */
     public static interface WriterStatement {
 
         public void write(Writer os) throws IOException;
@@ -53,33 +60,49 @@ public class AtomicFileWritingIdiom {
         this(targetFile, null, wStmt);
     }
 
+    /**
+     * 核心构造，构造最终目的，写入数据到目标文件
+     * @param targetFile 目标文件对象
+     * @param osStmt
+     * @param wStmt
+     * @throws IOException
+     */
     private AtomicFileWritingIdiom(File targetFile, OutputStreamStatement osStmt, WriterStatement wStmt)  throws IOException {
         AtomicFileOutputStream out = null;
         boolean error = true;
         try {
             out = new AtomicFileOutputStream(targetFile);
+            /**
+             * 如果写入缓存对象为null，执行输出流操作
+             * 这里是保证写入操作的原子性，以BufferedWriter 缓冲对象进行原子性的写入
+             */
             if (wStmt == null) {
-                // execute output stream operation
+                // 执行输出流操作
                 osStmt.write(out);
             } else {
                 BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
-                // execute writer operation and flush
+                // 执行写入操作并刷新
                 wStmt.write(bw);
                 bw.flush();
             }
             out.flush();
-            // everything went ok
+            // 数据写入完成了之后，才取消error
             error = false;
         } finally {
             // nothing interesting to do if out == null
             if (out != null) {
                 if (error) {
-                    // worst case here the tmp file/resources(fd) are not cleaned up
-                    // and the caller will be notified (IOException)
+                    /**
+                     * 关闭原子文件,写入失败的使用调用该方法
+                     * 这里最坏的情况是没有清理tmp文件/资源(fd)
+                     * 调用者将被通知(IOException)
+                     */
                     out.abort();
                 } else {
-                    // if the close operation (rename) fails we'll get notified.
-                    // worst case the tmp file may still exist
+                    /**
+                     * 如果关闭操作(重命名)失败，我们将得到通知。
+                     * 最坏的情况下，tmp文件可能仍然存在
+                     */
                     IOUtils.closeStream(out);
                 }
             }

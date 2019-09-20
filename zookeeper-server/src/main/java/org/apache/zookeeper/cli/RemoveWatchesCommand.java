@@ -26,7 +26,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher.WatcherType;
 
 /**
- * Remove watches command for cli
+ * 移除 CLI 的watches 类命令
  */
 public class RemoveWatchesCommand extends CliCommand {
 

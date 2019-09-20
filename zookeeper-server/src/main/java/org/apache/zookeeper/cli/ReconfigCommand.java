@@ -17,17 +17,17 @@
  */
 package org.apache.zookeeper.cli;
 
-import java.io.FileInputStream;
-import java.util.Properties;
-
 import org.apache.commons.cli.*;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
+import java.io.FileInputStream;
+import java.util.Properties;
+
 /**
- * reconfig command for cli
+ * 重新配置配置文件的CLI命令
  */
 public class ReconfigCommand extends CliCommand {
 

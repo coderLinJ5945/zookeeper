@@ -19,6 +19,9 @@ package org.apache.zookeeper.cli;
 
 import org.apache.zookeeper.KeeperException;
 
+/**
+ * 命令行异常的包装器异常类
+ */
 @SuppressWarnings("serial")
 public class CliWrapperException extends CliException {
     public CliWrapperException(Throwable cause) {

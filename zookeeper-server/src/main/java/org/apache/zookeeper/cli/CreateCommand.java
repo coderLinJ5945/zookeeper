@@ -17,7 +17,6 @@
  */
 package org.apache.zookeeper.cli;
 
-import java.util.List;
 import org.apache.commons.cli.*;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -26,8 +25,12 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.EphemeralType;
 
+import java.util.List;
+
 /**
- * create command for cli
+ * CLI的create 命令
+ *
+ * 简单理解，这些类是java实现的对应CLI命令
  */
 public class CreateCommand extends CliCommand {
 

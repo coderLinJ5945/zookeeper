@@ -18,6 +18,9 @@
 
 package org.apache.zookeeper.common;
 
+/**
+ * 处理密码公钥的工具类
+ */
 public class ClientX509Util extends X509Util {
 
     private final String sslAuthProviderProperty = getConfigPrefix() + "authProvider";

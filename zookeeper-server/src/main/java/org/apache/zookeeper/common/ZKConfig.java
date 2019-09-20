@@ -18,6 +18,12 @@
 
 package org.apache.zookeeper.common;
 
+import org.apache.zookeeper.Environment;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import org.apache.zookeeper.server.util.VerifyingFileFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,16 +32,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import org.apache.zookeeper.Environment;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-import org.apache.zookeeper.server.util.VerifyingFileFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * This class is a base class for the configurations of both client and server.
- * It supports reading client configuration from both system properties and
- * configuration file. A user can override any system property by calling
+ * zk 服务端和客户端的配置基类
+ *
+ * 它支持从系统属性和配置文件中读取客户机配置。
+ * 用户可以通过调用重写任何系统属性
  * {@link #setProperty(String, String)}.
  * @since 3.5.2
  */
@@ -52,11 +53,11 @@ public class ZKConfig {
     public static final String KINIT_COMMAND = "zookeeper.kinit";
     public static final String JGSS_NATIVE = "sun.security.jgss.native";
 
+    /*维护zk的属性对象*/
     private final Map<String, String> properties = new HashMap<String, String>();
 
     /**
-     * properties, which are common to both client and server, are initialized
-     * from system properties
+     * zk客户端和服务端通用构造初始化
      */
     public ZKConfig() {
         init();
@@ -87,16 +88,14 @@ public class ZKConfig {
 
     private void init() {
         /**
-         * backward compatibility for all currently available client properties
+         * 向下兼容的初始化
          */
         handleBackwardCompatibility();
     }
 
     /**
-     * Now onwards client code will use properties from this class but older
-     * clients still be setting properties through system properties. So to make
-     * this change backward compatible we should set old system properties in
-     * this configuration.
+     * 现在以后的客户端代码将使用这个类的属性，但是老客户端仍然通过系统属性设置属性。
+     * 因此，为了使这个更改向后兼容，我们应该在这个配置中设置旧的系统属性。
      */
     protected void handleBackwardCompatibility() {
         properties.put(JUTE_MAXBUFFER, System.getProperty(JUTE_MAXBUFFER));

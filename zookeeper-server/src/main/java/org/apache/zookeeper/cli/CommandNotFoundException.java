@@ -17,6 +17,9 @@
  */
 package org.apache.zookeeper.cli;
 
+/**
+ * CLI命令未找到异常类
+ */
 @SuppressWarnings("serial")
 public class CommandNotFoundException extends CliException {
 

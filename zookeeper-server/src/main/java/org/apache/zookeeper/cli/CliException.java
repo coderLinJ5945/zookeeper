@@ -17,6 +17,9 @@
  */
 package org.apache.zookeeper.cli;
 
+/**
+ * 命令行命令的异常类
+ */
 @SuppressWarnings("serial")
 public class CliException extends Exception {
 

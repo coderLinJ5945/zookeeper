@@ -16,19 +16,16 @@
  */
 package org.apache.zookeeper.cli;
 
-import java.util.List;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.Parser;
-import org.apache.commons.cli.PosixParser;
+import org.apache.commons.cli.*;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
+import java.util.List;
+
 /**
- * getAcl command for cli
+ * CLI命令获取所有的 访问控制列表（ACL）
  */
 public class GetAclCommand extends CliCommand {
 

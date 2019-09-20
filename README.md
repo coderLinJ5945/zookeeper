@@ -50,3 +50,12 @@ We always welcome new contributors to the project! See [How to Contribute](https
 3. leader选主模式（集群）
 4. 数据一致性的具体代码实现（集群）
 
+## 个人理解
+1. zookeeper 之所以运用到dubbo、kafka等各种分布式服务中的原因
+
+    a. 分布式系统的痛点：单点故障，zookeeper 的选主模式可以很好的在单点故障之后进行重新分配，恢复现有的分布式服务
+    b. 一致性算法，处理分布式中的需要保持一致性的原则
+
+
+
+

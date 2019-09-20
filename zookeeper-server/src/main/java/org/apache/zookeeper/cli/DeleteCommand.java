@@ -21,7 +21,7 @@ import org.apache.commons.cli.*;
 import org.apache.zookeeper.KeeperException;
 
 /**
- * delete command for cli
+ * CLI的删除命令
  */
 public class DeleteCommand extends CliCommand {
 

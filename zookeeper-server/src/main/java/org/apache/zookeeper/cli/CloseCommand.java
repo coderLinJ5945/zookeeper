@@ -18,20 +18,30 @@
 package org.apache.zookeeper.cli;
 
 /**
- * close command for cli
+ * 用于关闭 CLI 命令行命令类
  */
 public class CloseCommand extends CliCommand {
 
     public CloseCommand() {
         super("close", "");
     }
-    
-    
+
+    /**
+     * 解析命令参数
+     * @param cmdArgs
+     * @return
+     * @throws CliParseException
+     */
     @Override
     public CliCommand parse(String[] cmdArgs) throws CliParseException {
         return this;
     }
 
+    /**
+     * 关闭zk连接
+     * @return
+     * @throws CliException
+     */
     @Override
     public boolean exec() throws CliException {
         try {

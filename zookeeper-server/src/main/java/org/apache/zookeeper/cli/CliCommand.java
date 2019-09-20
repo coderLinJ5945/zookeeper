@@ -17,12 +17,14 @@
  */
 package org.apache.zookeeper.cli;
 
-import java.io.PrintStream;
-import java.util.Map;
 import org.apache.zookeeper.ZooKeeper;
 
+import java.io.PrintStream;
+import java.util.Map;
+
 /**
- * base class for all CLI commands
+ * 命令行命令（CLI commands）的基类
+ * CLI
  */
 abstract public class CliCommand {
     protected ZooKeeper zk;
@@ -101,7 +103,7 @@ abstract public class CliCommand {
     }
     
     /**
-     * parse the command arguments
+     * 解析命令参数
      * @param cmdArgs
      * @return this CliCommand
      * @throws CliParseException

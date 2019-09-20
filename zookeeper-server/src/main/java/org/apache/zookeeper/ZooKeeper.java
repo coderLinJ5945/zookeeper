@@ -70,6 +70,7 @@ import java.util.Set;
 
 /**
  * ZooKeeper client 的主要类
+ *
  * 使用必须要实例化ZooKeeper 对象，该类的方法都是线程安全，除非有特殊说明。
  *
  * 一旦建立到 Server 的连接，Session ID就分配给Client。
@@ -503,7 +504,8 @@ public class ZooKeeper implements AutoCloseable {
     }
 
     /**
-     * Register a watcher for a particular path.
+     * 为指定路径注册一个watcher
+     * 抽象类：提供一个获取watcher 的抽象方法，根据实际需求进行实现
      */
     public abstract class WatchRegistration {
         private Watcher watcher;
@@ -1350,9 +1352,7 @@ public class ZooKeeper implements AutoCloseable {
     }
 
     /**
-     * Specify the default watcher for the connection (overrides the one
-     * specified during construction).
-     *
+     * 指定默认的Watcher 监视器，这里使用synchronized 的原因是：防止并发设置导致默认监视器不一致异常
      * @param watcher
      */
     public synchronized void register(Watcher watcher) {
@@ -1360,10 +1360,9 @@ public class ZooKeeper implements AutoCloseable {
     }
 
     /**
-     * Close this client object. Once the client is closed, its session becomes
-     * invalid. All the ephemeral nodes in the ZooKeeper server associated with
-     * the session will be removed. The watches left on those nodes (and on
-     * their parents) will be triggered.
+     * client 关闭，做两个事情:
+     * 1. 让session 会话失效
+     * 2. 与之session关联的所有临时节点会被剔除
      * <p>
      * Added in 3.5.3: <a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">try-with-resources</a>
      * may be used instead of calling close directly.
@@ -1375,6 +1374,7 @@ public class ZooKeeper implements AutoCloseable {
      *
      * @throws InterruptedException
      */
+    @Override
     public synchronized void close() throws InterruptedException {
         if (!cnxn.getState().isAlive()) {
             if (LOG.isDebugEnabled()) {

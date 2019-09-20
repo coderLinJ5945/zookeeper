@@ -24,7 +24,8 @@ import org.apache.zookeeper.StatsTrack;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * listQuota command for cli
+ * listQuota 命令
+ * quota命令：用来显示磁盘使用情况和限制情况
  */
 public class ListQuotaCommand extends CliCommand {
 

@@ -25,6 +25,7 @@ import java.util.List;
 
 /**
  * zookeeper 所有的异步回调的总接口定义类
+ *
  * 异步调用通常可以提高与io相关的api上的系统效率
  * ZooKeeper提供了与同步api等价的异步版本。
  *
@@ -38,33 +39,6 @@ public interface AsyncCallback {
      */
     @InterfaceAudience.Public
     interface StatCallback extends AsyncCallback {
-        /**
-         * Process the result of the asynchronous call.
-         * <p/>
-         * On success, rc is
-         * {@link org.apache.zookeeper.KeeperException.Code#OK}.
-         * <p/>
-         * On failure, rc is set to the corresponding failure code in
-         * {@link org.apache.zookeeper.KeeperException}.
-         * <ul>
-         * <li>
-         * {@link org.apache.zookeeper.KeeperException.Code#NONODE}
-         * - The node on given path doesn't exist for some API calls.
-         * </li>
-         * <li>
-         * {@link org.apache.zookeeper.KeeperException.Code#BADVERSION}
-         * - The given version doesn't match the node's version
-         * for some API calls.
-         * </li>
-         * </ul>
-         *
-         * @param rc   The return code or the result of the call.
-         * @param path The path that we passed to asynchronous calls.
-         * @param ctx  Whatever context object that we passed to
-         *             asynchronous calls.
-         * @param stat {@link org.apache.zookeeper.data.Stat} object of
-         *             the node on given path.
-         */
         /**
          * 处理检索 node 节点 异步调用的结果方法
          * @param rc
@@ -81,28 +55,12 @@ public interface AsyncCallback {
     @InterfaceAudience.Public
     interface DataCallback extends AsyncCallback {
         /**
-         * Process the result of asynchronous calls.
-         * <p/>
-         * On success, rc is
-         * {@link org.apache.zookeeper.KeeperException.Code#OK}.
-         * <p/>
-         * On failure, rc is set to the corresponding failure code in
-         * {@link org.apache.zookeeper.KeeperException}.
-         * <ul>
-         * <li>
-         * {@link org.apache.zookeeper.KeeperException.Code#NONODE}
-         * - The node on given path doesn't exist for some API calls.
-         * </li>
-         * </ul>
-         *
-         * @param rc   The return code or the result of the call.
-         * @param path The path that we passed to asynchronous calls.
-         * @param ctx  Whatever context object that we passed to
-         *             asynchronous calls.
-         * @param data The {@link org.apache.zookeeper.server.DataNode#data}
-         *             of the node.
-         * @param stat {@link org.apache.zookeeper.data.Stat} object of
-         *             the node on given path.
+         * 处理异步调用的结果
+         * @param rc
+         * @param path
+         * @param ctx
+         * @param data
+         * @param stat
          */
         public void processResult(int rc, String path, Object ctx, byte data[],
                 Stat stat);

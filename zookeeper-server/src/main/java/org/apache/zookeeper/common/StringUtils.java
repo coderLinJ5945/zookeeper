@@ -39,6 +39,7 @@ public class StringUtils {
                results.add(splits[i]);
             }
         }
+        // 这里返回一个不能用于修改的List集合
         return Collections.unmodifiableList(results);
     }
     

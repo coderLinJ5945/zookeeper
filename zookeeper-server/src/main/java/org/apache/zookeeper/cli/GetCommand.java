@@ -22,7 +22,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * get command for cli
+ * CLI 的get命令
  */
 public class GetCommand extends CliCommand {
 

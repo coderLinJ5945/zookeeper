@@ -24,15 +24,13 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 
 /**
- * A set of hosts a ZooKeeper client should connect to.
- * 
- * Classes implementing this interface must guarantee the following:
- * 
- * * Every call to next() returns an InetSocketAddress. So the iterator never
- * ends.
- * 
- * * The size() of a HostProvider may never be zero.
- * 
+ *
+ * 一个 zk client 连接的 hosts 接口（服务hosts的提供者接口）
+ *
+ * 实现该接口的类的要求：
+ *  1. 每次调用 next()方法会都会返回InetSocketAddress，所以 iterator迭代器永不结束
+ *  2. HostProvider 的size()方法可能永远不位零
+ *
  * A HostProvider must return resolved InetSocketAddress instances on next() if the next address is resolvable.
  * In that case, it's up to the HostProvider, whether it returns the next resolvable address in the list or return
  * the next one as UnResolved.

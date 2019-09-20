@@ -17,7 +17,6 @@
  */
 package org.apache.zookeeper.cli;
 
-import java.util.List;
 import org.apache.commons.cli.*;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.KeeperException;
@@ -25,11 +24,20 @@ import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
+import java.util.List;
+
 /**
  * setAcl command for cli.
  * Available options are s for printing znode's stats, v for set version of znode(s), R for
  * recursive setting. User can combine v and R options together, but not s and R considering the
  * number of znodes could be large.
+ *
+ * 设置 CLI 的访问控制列表
+ * 可用选项：
+ *      s：打印znode的统计信息
+ *      v：查看znode的版本
+ *      R：递归设置
+ *
  */
 public class SetAclCommand extends CliCommand {
 

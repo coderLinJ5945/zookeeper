@@ -32,7 +32,9 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * ZooKeeperAdmin client 主类库，用于执行集群管理任务
+ * zookeeper client 主类库，extends 继承 Zookeeper 类，拥有Zookeeper 的所有特性
+ *
+ * 用于执行集群管理任务
  * 例如重新配置集群成员
  * ZooKeeperAdmin类继承了ZooKeeper，参考ZooKeeper
  * Please check {@link ZooKeeper} class document for more details.

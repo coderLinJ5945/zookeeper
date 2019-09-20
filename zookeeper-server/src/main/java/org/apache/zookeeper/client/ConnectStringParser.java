@@ -27,13 +27,9 @@ import java.util.List;
 import static org.apache.zookeeper.common.StringUtils.split;
 
 /**
- * A parser for ZooKeeper Client connect strings.
- * 
- * This class is not meant to be seen or used outside of ZooKeeper itself.
- * 
- * The chrootPath member should be replaced by a Path object in issue
- * ZOOKEEPER-849.
- * 
+ * ZooKeeper client连接字符串的解析器
+ *
+ * 这个类不应该在ZooKeeper本身之外被看到或使用（只会被zookpeer自己使用）
  * @see org.apache.zookeeper.ZooKeeper
  */
 public final class ConnectStringParser {

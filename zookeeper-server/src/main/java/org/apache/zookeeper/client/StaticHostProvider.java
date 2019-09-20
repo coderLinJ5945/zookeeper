@@ -18,22 +18,17 @@
 
 package org.apache.zookeeper.client;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
 import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.*;
+
 /**
- * Most simple HostProvider, resolves on every next() call.
+ * 最简单的主机提供程序，在每次next()调用时解析
  *
  * Please be aware that although this class doesn't do any DNS caching, there're multiple levels of caching already
  * present across the stack like in JVM, OS level, hardware, etc. The best we could do here is to get the most recent

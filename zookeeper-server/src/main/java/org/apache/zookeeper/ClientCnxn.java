@@ -58,10 +58,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
+ * 维护一个可用的Server服务列表
  * This class manages the socket i/o for the client. ClientCnxn maintains a list
  * of available servers to connect to and "transparently" switches servers it is
  * connected to as needed.
- *  维护一个可连接到可用的Server服务列表
+ *
  */
 @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class ClientCnxn {
@@ -80,7 +81,7 @@ public class ClientCnxn {
     private static final int SET_WATCHES_MAX_LENGTH = 128 * 1024;
 
     /**
-     * 身份验证数据，// TODO: 2019/8/26  待确认是谁的？ client？ 
+     * 身份验证数据
      */
     static class AuthData {
         AuthData(String scheme, byte data[]) {
@@ -113,8 +114,15 @@ public class ClientCnxn {
      */
     private volatile int negotiatedSessionTimeout;
 
+    /**
+     * 客户端读取数据的最大超时时间
+     */
     private int readTimeout;
 
+    /**
+     * 猜测：这里的 sessionTimeout 和 zooKeeper 使用final修饰是为了安全考虑
+     *
+     */
     private final int sessionTimeout;
 
     private final ZooKeeper zooKeeper;
@@ -133,7 +141,10 @@ public class ClientCnxn {
      */
     private boolean readOnly;
 
-    //?
+    /**
+     * root的路径
+     * chroot ： change root diretory
+     */
     final String chrootPath;
 
     //传出请求队列、生成心跳 和 ReadThread
@@ -231,6 +242,7 @@ public class ClientCnxn {
 
     /**
      * 发送请求数据封装类
+     * 这个packet指的是client发送到server的数据包
      */
     static class Packet {
         RequestHeader requestHeader;
